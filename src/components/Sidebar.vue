@@ -1,0 +1,91 @@
+<template>
+  <aside class="protocols__sidebar">
+    <div class="protocols__search">
+      <input
+        class="protocols__input"
+        v-model="q"
+        placeholder="Quick search (comma = OR, e.g. cardiac, emergency)"
+        @input="onInput"
+      />
+    </div>
+
+    <ul class="protocols__list">
+      <li
+        v-for="(item, idx) in filtered"
+        :key="idOf(item) || nameOf(item) || idx"
+        :class="['protocols__list-item', { 'is-selected': isSelected(item) }]"
+        @click="select(item)"
+        title="{{ (item.STT ?? item.id ?? '') + '. ' + (nameOf(item) || '') }}"
+      >
+        <div class="protocols__line">{{ (item.STT ?? item.id ?? '') + '. ' + (nameOf(item) || '') }}</div>
+      </li>
+    </ul>
+    <div class="protocols__bottombar">
+      <button class="icon-btn" title="Refresh protocols" @click="$emit('refresh')">🔄</button>
+      <button class="icon-btn" title="Open spreadsheet for edit" @click="$emit('open-edit')">✏️</button>
+      <button class="icon-btn" title="Settings" @click="$emit('open-settings')">⚙️</button>
+    </div>
+  </aside>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+
+const props = defineProps({
+  protocols: { type: Array, default: () => [] },
+  selectedId: { type: [String, Number], default: null }
+})
+const emit = defineEmits(['select', 'refresh', 'open-edit', 'open-settings'])
+
+const q = ref('')
+
+function nameOf(obj) {
+  return obj && (obj['Tên'] || obj['name'] || obj['Name'] || obj['title'] || '')
+}
+
+function idOf(obj) {
+  return obj && (obj.STT ?? obj.id ?? obj['STT'] ?? null)
+}
+
+const tokens = computed(() =>
+  q.value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+)
+
+const filtered = computed(() => {
+  const list = props.protocols || []
+  if (!tokens.value.length) return list
+  const low = tokens.value.map((t) => t.toLowerCase())
+  return list.filter((p) => {
+    const name = (nameOf(p) || '').toLowerCase()
+    return low.some((t) => name.includes(t))
+  })
+})
+
+function select(item) {
+  emit('select', item)
+}
+
+function isSelected(item) {
+  const id = idOf(item)
+  return id != null && String(id) === String(props.selectedId)
+}
+
+function onInput() {
+  // computed filtering is instant — left for future debouncing
+}
+</script>
+
+<style scoped>
+/* small local tweaks; main visual styles are kept in ProtocolDisplay.vue */
+.protocols__search{margin-bottom:12px}
+.protocols__input{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef8;background:#fff}
+.protocols__list{list-style:none;margin:0;padding:0;overflow:auto}
+.protocols__list-item{padding:8px 10px;border-radius:6px;margin-bottom:6px;cursor:pointer;background:transparent;text-align:left}
+.protocols__list-item.is-selected{background:linear-gradient(90deg,#06b6d4 0%,#7c3aed 100%);color:#fff}
+.protocols__line{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.protocols__bottombar{display:flex;gap:10px;padding-top:8px;border-top:1px solid rgba(16,24,40,.04);align-items:center;margin-top:auto}
+.icon-btn{background:#fff;border:1px solid #e3e8ef;padding:8px;border-radius:8px;cursor:pointer}
+</style>
