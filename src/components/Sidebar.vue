@@ -4,7 +4,7 @@
       <input
         class="protocols__input"
         v-model="q"
-        placeholder="Quick search (comma = OR, e.g. cardiac, emergency)"
+        placeholder="Tìm kiếm (Dấu phẩy = OR, e.g. giáp, thùy)"
         @input="onInput"
       />
     </div>

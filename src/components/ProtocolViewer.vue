@@ -1,12 +1,5 @@
 <template>
   <div class="protocols__content">
-    <div class="protocols__topmenu">
-      <button @click="onCopy" :disabled="!current">Copy</button>
-      <div class="protocols__status">
-        <span v-if="loading">Loading…</span>
-        <span v-else-if="error" class="protocols__error">{{ error }}</span>
-      </div>
-    </div>
 
     <div class="protocols__editor">
       <div v-if="!current" class="protocols__empty">Select a protocol to view or edit</div>
@@ -49,9 +42,11 @@ import { parseBracketsToHtml, applyChoiceInDom, applyVarChoiceInDom, replaceVarT
 const props = defineProps({
   current: { type: Object, default: null },
   loading: { type: Boolean, default: false },
-  error: { type: [String, Boolean, null], default: null }
+  error: { type: [String, Boolean, null], default: null },
+  // optional draftHtml allows the parent to ask the viewer to render a saved draft/html snapshot
+  draftHtml: { type: String, default: null }
 })
-const emit = defineEmits(['copy'])
+const emit = defineEmits(['copy', 'edited'])
 
   const editor = ref(null)
 const editorHtml = ref('')
@@ -64,16 +59,22 @@ const options = ref([])
   const activeOptId = ref(null)
   const popupType = ref(null) // 'opt' | 'var' or null
   const activeVarName = ref(null)
+  const saveTimer = ref(null)
 
 watch(
   () => props.current,
   (nv) => {
-    const raw = nv ? nv['Nội dung'] || nv['content'] || '' : ''
-    const parsed = parseBracketsToHtml(raw)
-    editorHtml.value = parsed.html
-    // initialize options with selected index default 0
-    options.value = parsed.options.map((o) => ({ ...o }))
-    varDefs.value = (parsed.varDefs || []).map((v) => ({ ...v }))
+    // if a draftHtml is provided by parent, that takes precedence
+    if (props.draftHtml) {
+      editorHtml.value = props.draftHtml
+    } else {
+      const raw = nv ? nv['Nội dung'] || nv['content'] || '' : ''
+      const parsed = parseBracketsToHtml(raw)
+      editorHtml.value = parsed.html
+      // initialize options with selected index default 0
+      options.value = parsed.options.map((o) => ({ ...o }))
+      varDefs.value = (parsed.varDefs || []).map((v) => ({ ...v }))
+    }
     // after DOM renders, apply initial choices to ensure spans contain labels
     setTimeout(() => {
       options.value.forEach((o) => applyChoiceInDom(editor.value, o.id, o.selected))
@@ -83,6 +84,21 @@ watch(
     })
   },
   { immediate: true }
+)
+
+// watch for draftHtml changes (preview/restore from parent)
+watch(
+  () => props.draftHtml,
+  (nv) => {
+    if (!nv) return
+    editorHtml.value = nv
+    // after DOM render, ensure spans are non-editable
+    setTimeout(() => {
+      const spans = editor.value ? editor.value.querySelectorAll('.bracket-opt') : []
+      spans.forEach && spans.forEach((s) => s.setAttribute && s.setAttribute('contenteditable', 'false'))
+    })
+  },
+  { immediate: false }
 )
 
 function nameOf(obj) {
@@ -210,6 +226,18 @@ function onInput() {
   spans.forEach((s) => s.setAttribute('contenteditable', 'false'))
   const varspans = editor.value.querySelectorAll('.bracket-var')
   varspans.forEach((s) => s.setAttribute('contenteditable', 'false'))
+
+  // Emit edited event (debounced) with current html and plain text to let parent persist drafts/versions
+  if (saveTimer.value) clearTimeout(saveTimer.value)
+  saveTimer.value = setTimeout(() => {
+    try {
+      const html = editor.value ? editor.value.innerHTML : editorHtml.value
+      const text = getPlainTextFromContainer(editor.value || { innerText: '' })
+      emit('edited', { id: props.current ? (props.current['STT'] || props.current.id) : null, html, text, ts: Date.now() })
+    } catch (err) {
+      console.error('emit edited failed', err)
+    }
+  }, 600)
 }
 
   async function onCopy() {
@@ -222,6 +250,12 @@ function onInput() {
       console.error('copy failed', err)
     }
   }
+
+// expose a small API so parent can trigger copy or read current html
+defineExpose({
+  copyEditor: onCopy,
+  getEditorHtml: () => (editor.value ? editor.value.innerHTML : editorHtml.value)
+})
 
 // ensure initial spans are non-editable after mount
   onMounted(() => {
@@ -240,16 +274,13 @@ function onInput() {
 
 <style scoped>
 /* minimal local styles: main visual rules are in ProtocolDisplay */
-.protocols__topmenu{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .opt-label{font-size:13px;color:#334155}
-.protocols__topmenu button{padding:8px 12px;border-radius:6px;border:1px solid #e3e8ef;background:#f8fafc;cursor:pointer}
-.protocols__status{margin-left:auto;color:#64748b}
 /* protocols__vardefs removed — variable selection is inline via clickable pills */
 .protocols__editor{flex:1}
 .protocols__editor-inner{display:flex;flex-direction:column;height:100%}
 .protocols__title-selected{margin:0 0 12px 0}
-.protocols__editor-area{flex:1}
-.protocols__editor-content{width:100%;height:100%;min-height:350px;border-radius:8px;border:1px solid #e6eef8;padding:12px;font-family:inherit;outline:none;overflow:auto;text-align:left}
+.protocols__editor-area{flex:1;display:flex;flex-direction:column;min-height:0}
+.protocols__editor-content{width:100%;border-radius:8px;border:1px solid #e6eef8;padding:12px;font-family:inherit;outline:none;overflow:auto;flex:1;min-height:0;text-align:left;/* reserve space for sticky bottom bar */padding-bottom:calc(var(--bottombar-height,56px) + 12px)}
 .bracket-opt{
   display:inline-flex;
   align-items:center;
@@ -257,13 +288,16 @@ function onInput() {
   background:linear-gradient(90deg,#fff7cc,#fde68a);
   border:1px solid #f0c57a;
   padding:4px 10px;
-  border-radius:999px;
+  border-radius:8px;
   margin:0 4px;
-  white-space:nowrap;
+  /* allow text to wrap inside the pill */
+  white-space:normal;
+  word-break:break-word;
+  word-wrap:break-word;
+  max-width:36rem;
   font-weight:700!important;
   color:#091427;
   box-shadow:0 1px 0 rgba(15,23,42,0.03);
-  text-wrap: auto;
 }
 .bracket-opt strong{font-weight:700;color:inherit}
 .bracket-empty{opacity:0.95;padding:6px 12px;border-radius:999px;background:#f1f5f9;border:1px dashed #cbd5e1;cursor:pointer;font-weight:700;color:#1f2937;margin:0 4px}
@@ -287,9 +321,13 @@ function onInput() {
   background:linear-gradient(90deg,#fff7cc,#fde68a);
   border:1px solid #f0c57a;
   padding:4px 10px;
-  border-radius:999px;
+  border-radius:8px;
   margin:0 4px;
-  white-space:nowrap;
+  /* allow text to wrap inside the pill */
+  white-space:normal;
+  word-break:break-word;
+  word-wrap:break-word;
+  max-width:36rem;
   font-weight:700 !important;
   color:#091427;
   box-shadow:0 1px 0 rgba(15,23,42,0.03);
