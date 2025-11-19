@@ -1,23 +1,10 @@
 <template>
   <div class="protocols">
-    <Sidebar
-      :protocols="store.protocols"
-      :selectedId="store.selectedId"
-      @select="onSelect"
-      @refresh="onRefresh"
-      @open-edit="openEditLink"
-      @open-settings="showSettings = true"
-    />
+    <Sidebar :protocols="store.protocols" :selectedId="store.selectedId" @select="onSelect" @refresh="onRefresh"
+      @open-edit="openEditLink" @open-settings="showSettings = true" />
     <div class="protocols__main">
-      <ProtocolViewer
-        ref="viewerRef"
-        :current="current"
-        :loading="store.loading"
-        :error="store.error"
-        :draftHtml="draftHtmlForViewer"
-        @copy="onCopy"
-        @edited="onEdited"
-      />
+      <ProtocolViewer ref="viewerRef" :current="current" :loading="store.loading" :error="store.error"
+        :draftHtml="draftHtmlForViewer" @copy="onCopy" @edited="onEdited" />
 
       <!-- bottom menu moved here -->
       <div class="protocols__bottombar">
@@ -42,26 +29,30 @@
       <div v-if="showVersions" class="modal-overlay" @click.self="closeVersionsModal">
         <div class="modal">
           <h3>Saved versions</h3>
-          <div v-if="currentVersions.length===0">No saved versions for this protocol.</div>
-                  <ul v-else style="max-height:40vh;overflow:auto;list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px">
-                    <li v-for="(v, idx) in currentVersions" :key="v.ts" style="display:flex;gap:8px;align-items:center">
-                      <div style="flex:1">
-                        <div style="display:flex;justify-content:space-between;align-items:center">
-                          <div style="font-size:14px;font-weight:600;color:#0f172a">{{ v.title || ('Saved ' + new Date(v.ts).toLocaleString()) }}</div>
-                          <div style="font-size:12px;color:#475569">{{ new Date(v.ts).toLocaleString() }}</div>
-                        </div>
-                        <div style="font-size:13px;max-height:5rem;overflow:hidden;color:#0f172a;margin-top:6px">{{ (v.text||'').slice(0,300) }}</div>
-                      </div>
-                      <div style="display:flex;gap:6px;align-items:center">
-                        <button class="icon-btn" @click.prevent="restoreVersion(v)">Preview</button>
-                        <button class="icon-btn" @click.prevent="applyVersionToProtocol(v)">Apply</button>
-                        <button class="icon-btn" @click.prevent="renameVersion(v)">Rename</button>
-                        <button class="icon-btn" :disabled="v.locked" @click.prevent="deleteVersion(v)">Delete</button>
-                        <button class="icon-btn" @click.prevent="toggleLockVersion(v)">{{ v.locked ? '🔒' : '🔓' }}</button>
-                      </div>
-                    </li>
-                  </ul>
-          <div class="modal-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;align-items:center">
+          <div v-if="currentVersions.length === 0">No saved versions for this protocol.</div>
+          <ul v-else
+            style="max-height:40vh;overflow:auto;list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px">
+            <li v-for="(v, idx) in currentVersions" :key="v.ts" style="display:flex;gap:8px;align-items:center">
+              <div style="flex:1">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <div style="font-size:14px;font-weight:600;color:#0f172a">{{ v.title || ('Saved ' + new
+                    Date(v.ts).toLocaleString()) }}</div>
+                  <div style="font-size:12px;color:#475569">{{ new Date(v.ts).toLocaleString() }}</div>
+                </div>
+                <div style="font-size:13px;max-height:5rem;overflow:hidden;color:#0f172a;margin-top:6px">{{
+                  (v.text || '').slice(0, 300) }}</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button class="icon-btn" @click.prevent="restoreVersion(v)">Preview</button>
+                <button class="icon-btn" @click.prevent="applyVersionToProtocol(v)">Apply</button>
+                <button class="icon-btn" @click.prevent="renameVersion(v)">Rename</button>
+                <button class="icon-btn" :disabled="v.locked" @click.prevent="deleteVersion(v)">Delete</button>
+                <button class="icon-btn" @click.prevent="toggleLockVersion(v)">{{ v.locked ? '🔒' : '🔓' }}</button>
+              </div>
+            </li>
+          </ul>
+          <div class="modal-actions"
+            style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;align-items:center">
             <button class="icon-btn" @click.prevent="deleteAllVersions">Delete all (except locked)</button>
             <button @click="closeVersionsModal">Close</button>
           </div>
@@ -231,7 +222,7 @@ function saveVersionNow() {
     console.error('save versions failed', e)
   }
   loadVersionsForCurrent()
-  versionsStatus.value = `Saved` 
+  versionsStatus.value = `Saved`
 }
 
 function startAutosave() {
@@ -256,7 +247,7 @@ async function autoSaveTick() {
   let html = draftHtmlForViewer.value
   try {
     if (!html && viewerRef.value && viewerRef.value.getEditorHtml) html = viewerRef.value.getEditorHtml()
-  } catch (e) {}
+  } catch (e) { }
   if (!html) return
   if (lastAutosaveHtml.value === html) return
   // perform autosave with a generated title
@@ -410,34 +401,207 @@ function saveSettings() {
 </script>
 
 <style scoped>
-.protocols{display:flex;height:100vh;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
-.protocols__sidebar{width:320px;padding:16px;border-right:1px solid rgba(16,24,40,.06);background:linear-gradient(180deg,#f8fafc,#fff);display:flex;flex-direction:column}
-.protocols__search{margin-bottom:12px}
-.protocols__input{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef8;background:#fff}
-.protocols__list{list-style:none;margin:0;padding:0;overflow:auto}
-.protocols__list-item{padding:8px 10px;border-radius:6px;margin-bottom:6px;cursor:pointer;background:transparent;text-align:left}
-.protocols__list-item.is-selected{background:linear-gradient(90deg,#06b6d4 0%,#7c3aed 100%);color:#fff}
-.protocols__content{flex:1;display:flex;flex-direction:column;padding:18px;background:#fff;text-align:left}
-.protocols__status{margin-left:auto;color:#64748b}
-.protocols__editor{flex:1;display:flex;flex-direction:column;min-height:0}
-.protocols__editor-inner{display:flex;flex-direction:column;height:100%;flex:1;min-height:0}
-.protocols__title-selected{margin:0 0 12px 0}
-.protocols__textarea{width:100%;height:100%;min-height:350px;border-radius:8px;border:1px solid #e6eef8;padding:12px;font-family:inherit;resize:vertical}
-.protocols__empty{color:#475569;padding:30px;text-align:left}
-.protocols__error{color:#b91c1c}
+.protocols {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial;
+  overflow: hidden
+}
+
+.protocols__sidebar {
+  width: 320px;
+  padding: 16px;
+  border-right: 1px solid rgba(16, 24, 40, .06);
+  background: linear-gradient(180deg, #f8fafc, #fff);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0
+}
+
+.protocols__search {
+  margin-bottom: 12px;
+  flex-shrink: 0
+}
+
+.protocols__input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e6eef8;
+  background: #fff
+}
+
+.protocols__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1
+}
+
+.protocols__list-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  background: transparent;
+  text-align: left
+}
+
+.protocols__list-item.is-selected {
+  background: linear-gradient(90deg, #06b6d4 0%, #7c3aed 100%);
+  color: #fff
+}
+
+.protocols__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  background: #fff;
+  text-align: left;
+  overflow: hidden;
+  min-height: 0
+}
+
+.protocols__status {
+  margin-left: auto;
+  color: #64748b
+}
+
+.protocols__editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden
+}
+
+.protocols__editor-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden
+}
+
+.protocols__title-selected {
+  margin: 0 0 12px 0;
+  flex-shrink: 0
+}
+
+.protocols__textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 350px;
+  border-radius: 8px;
+  border: 1px solid #e6eef8;
+  padding: 12px;
+  font-family: inherit;
+  resize: vertical
+}
+
+.protocols__empty {
+  color: #475569;
+  padding: 30px;
+  text-align: left
+}
+
+.protocols__error {
+  color: #b91c1c
+}
 
 /* main container for right side to allow bottom bar placement */
-.protocols__main{flex:1;display:flex;flex-direction:column;align-items:stretch;text-align:left;--bottombar-height:56px}
-.protocols__main.editor-fullscreen{position:fixed;inset:0;z-index:99999;padding:18px;background:#fff;display:flex;flex-direction:column}
-.protocols__main.editor-fullscreen .protocols__editor-content{height:100vh;max-height:none}
-.protocols__bottombar{display:flex;gap:10px;padding:10px;border-top:1px solid rgba(16,24,40,.04);align-items:center;position:sticky;bottom:0;background:#fff;z-index:20;height:var(--bottombar-height);box-shadow:0 -2px 8px rgba(2,6,23,0.04)}
-.icon-btn{background:#fff;border:1px solid #e3e8ef;padding:8px;border-radius:8px;cursor:pointer}
+.protocols__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  --bottombar-height: 64px;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+.protocols__main.editor-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  padding: 18px;
+  background: #fff;
+  display: flex;
+  flex-direction: column
+}
+
+.protocols__main.editor-fullscreen .protocols__editor-content {
+  height: 100vh;
+  max-height: none
+}
+
+.protocols__bottombar {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px 16px 16px;
+  border-top: 1px solid rgba(16, 24, 40, .04);
+  align-items: center;
+  background: #fff;
+  z-index: 20;
+  min-height: var(--bottombar-height);
+  box-shadow: 0 -2px 8px rgba(2, 6, 23, 0.04);
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  background: #fff;
+  border: 1px solid #e3e8ef;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer
+}
 
 /* settings modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,.5);display:flex;align-items:center;justify-content:center}
-.modal{background:#fff;padding:18px;border-radius:8px;min-width:360px;max-width:90%}
-.modal h3{margin-top:0}
-.modal-input{width:100%;padding:8px;border:1px solid #e6eef8;border-radius:6px;margin-bottom:8px}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end}
-.modal-hint{font-size:12px;color:#475569;margin-top:8px}
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, .5);
+  display: flex;
+  align-items: center;
+  justify-content: center
+}
+
+.modal {
+  background: #fff;
+  padding: 18px;
+  border-radius: 8px;
+  min-width: 360px;
+  max-width: 90%
+}
+
+.modal h3 {
+  margin-top: 0
+}
+
+.modal-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #e6eef8;
+  border-radius: 6px;
+  margin-bottom: 8px
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end
+}
+
+.modal-hint {
+  font-size: 12px;
+  color: #475569;
+  margin-top: 8px
+}
 </style>

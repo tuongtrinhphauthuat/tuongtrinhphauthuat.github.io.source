@@ -1,22 +1,14 @@
 <template>
   <aside class="protocols__sidebar">
     <div class="protocols__search">
-      <input
-        class="protocols__input"
-        v-model="q"
-        placeholder="Tìm kiếm (Dấu phẩy = OR, e.g. giáp, thùy)"
-        @input="onInput"
-      />
+      <input class="protocols__input" v-model="q" placeholder="Tìm kiếm (Dấu phẩy = OR, e.g. giáp, thùy)"
+        @input="onInput" />
     </div>
 
     <ul class="protocols__list">
-      <li
-        v-for="(item, idx) in filtered"
-        :key="idOf(item) || nameOf(item) || idx"
-        :class="['protocols__list-item', { 'is-selected': isSelected(item) }]"
-        @click="select(item)"
-        title="{{ (item.STT ?? item.id ?? '') + '. ' + (nameOf(item) || '') }}"
-      >
+      <li v-for="(item, idx) in filtered" :key="idOf(item) || nameOf(item) || idx"
+        :class="['protocols__list-item', { 'is-selected': isSelected(item) }]" @click="select(item)"
+        title="{{ (item.STT ?? item.id ?? '') + '. ' + (nameOf(item) || '') }}">
         <div class="protocols__line">{{ (item.STT ?? item.id ?? '') + '. ' + (nameOf(item) || '') }}</div>
       </li>
     </ul>
@@ -80,12 +72,65 @@ function onInput() {
 
 <style scoped>
 /* small local tweaks; main visual styles are kept in ProtocolDisplay.vue */
-.protocols__search{margin-bottom:12px}
-.protocols__input{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef8;background:#fff}
-.protocols__list{list-style:none;margin:0;padding:0;overflow:auto}
-.protocols__list-item{padding:8px 10px;border-radius:6px;margin-bottom:6px;cursor:pointer;background:transparent;text-align:left}
-.protocols__list-item.is-selected{background:linear-gradient(90deg,#06b6d4 0%,#7c3aed 100%);color:#fff}
-.protocols__line{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.protocols__bottombar{display:flex;gap:10px;padding-top:8px;border-top:1px solid rgba(16,24,40,.04);align-items:center;margin-top:auto}
-.icon-btn{background:#fff;border:1px solid #e3e8ef;padding:8px;border-radius:8px;cursor:pointer}
+/* small local tweaks; main visual styles are kept in ProtocolDisplay.vue */
+.protocols__search {
+  margin-bottom: 12px;
+  flex-shrink: 0
+}
+
+.protocols__input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e6eef8;
+  background: #fff
+}
+
+.protocols__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0
+}
+
+.protocols__list-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  background: transparent;
+  text-align: left
+}
+
+.protocols__list-item.is-selected {
+  background: linear-gradient(90deg, #06b6d4 0%, #7c3aed 100%);
+  color: #fff
+}
+
+.protocols__line {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.protocols__bottombar {
+  display: flex;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(16, 24, 40, .04);
+  align-items: center;
+  margin-top: auto;
+  flex-shrink: 0
+}
+
+.icon-btn {
+  background: #fff;
+  border: 1px solid #e3e8ef;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer
+}
 </style>

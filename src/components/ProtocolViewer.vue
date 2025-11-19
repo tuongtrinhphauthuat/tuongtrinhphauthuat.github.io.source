@@ -9,26 +9,16 @@
         <!-- variable selectors removed — variable pills are clickable inline now -->
 
         <div class="protocols__editor-area">
-          <div
-            ref="editor"
-            class="protocols__editor-content"
-            contenteditable="true"
-            v-html="editorHtml"
-            @input="onInput"
-            @click="onEditorClick"
-            ></div>
-            <!-- inline popup for bracket options -->
-                    <div v-if="popupVisible" class="bracket-popup" :style="{ left: popupX + 'px', top: popupY + 'px' }">
-                      <ul class="bracket-list">
-                        <li
-                          v-for="(c, ci) in popupItems"
-                          :key="ci"
-                          @click.stop.prevent="popupChoose(ci)"
-                        >
-                          {{ c }}
-                        </li>
-                      </ul>
-                    </div>
+          <div ref="editor" class="protocols__editor-content" contenteditable="true" v-html="editorHtml"
+            @input="onInput" @click="onEditorClick"></div>
+          <!-- inline popup for bracket options -->
+          <div v-if="popupVisible" class="bracket-popup" :style="{ left: popupX + 'px', top: popupY + 'px' }">
+            <ul class="bracket-list">
+              <li v-for="(c, ci) in popupItems" :key="ci" @click.stop.prevent="popupChoose(ci)">
+                {{ c }}
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -48,18 +38,18 @@ const props = defineProps({
 })
 const emit = defineEmits(['copy', 'edited'])
 
-  const editor = ref(null)
+const editor = ref(null)
 const editorHtml = ref('')
 const options = ref([])
-  const varDefs = ref([])
-  const popupVisible = ref(false)
-  const popupX = ref(0)
-  const popupY = ref(0)
-  const popupSelectedIndex = ref(0)
-  const activeOptId = ref(null)
-  const popupType = ref(null) // 'opt' | 'var' or null
-  const activeVarName = ref(null)
-  const saveTimer = ref(null)
+const varDefs = ref([])
+const popupVisible = ref(false)
+const popupX = ref(0)
+const popupY = ref(0)
+const popupSelectedIndex = ref(0)
+const activeOptId = ref(null)
+const popupType = ref(null) // 'opt' | 'var' or null
+const activeVarName = ref(null)
+const saveTimer = ref(null)
 
 watch(
   () => props.current,
@@ -105,119 +95,132 @@ function nameOf(obj) {
   return obj && (obj['Tên'] || obj['name'] || obj['Name'] || obj['title'] || '')
 }
 
-  function onOptionChange(opt) {
-    // apply choice in DOM (for backward compatibility if used)
-    applyChoiceInDom(editor.value, opt.id, opt.selected)
-  }
+function onOptionChange(opt) {
+  // apply choice in DOM (for backward compatibility if used)
+  applyChoiceInDom(editor.value, opt.id, opt.selected)
+}
 
-  function chooseVar(varName, index) {
-    const v = varDefs.value.find((x) => x.name === varName)
-    if (!v) return
-    v.selected = Number(index)
-    applyVarChoiceInDom(editor.value, v.name, v.selected, v.choices)
-    // make sure any tokens replaced in text nodes (if they exist anywhere newly) are updated
-    replaceVarTokensInDom(editor.value, varDefs.value)
-  }
+function chooseVar(varName, index) {
+  const v = varDefs.value.find((x) => x.name === varName)
+  if (!v) return
+  v.selected = Number(index)
+  applyVarChoiceInDom(editor.value, v.name, v.selected, v.choices)
+  // make sure any tokens replaced in text nodes (if they exist anywhere newly) are updated
+  replaceVarTokensInDom(editor.value, varDefs.value)
+}
 
-  function openPopupForOpt(optId, rect) {
-    const opt = options.value.find((o) => o.id === optId)
-    if (!opt) return
-    activeOptId.value = optId
-    popupSelectedIndex.value = Number(opt.selected || 0)
-    // position popup under the span
-    popupX.value = rect.left + window.scrollX
-    popupY.value = rect.bottom + window.scrollY + 6
-    popupType.value = 'opt'
-    activeVarName.value = null
-    popupVisible.value = true
-  }
+function openPopupForOpt(optId, rect) {
+  const opt = options.value.find((o) => o.id === optId)
+  if (!opt) return
+  activeOptId.value = optId
+  popupSelectedIndex.value = Number(opt.selected || 0)
+  // position popup under the span
+  popupX.value = rect.left + window.scrollX
+  popupY.value = rect.bottom + window.scrollY + 6
+  popupType.value = 'opt'
+  activeVarName.value = null
+  popupVisible.value = true
+}
 
-  function applyAndClose() {
-    const opt = options.value.find((o) => o.id === activeOptId.value)
-    if (!opt) return
-    opt.selected = Number(popupSelectedIndex.value)
-    applyChoiceInDom(editor.value, opt.id, opt.selected)
-    popupVisible.value = false
-    activeOptId.value = null
-    popupType.value = null
-  }
+function applyAndClose() {
+  const opt = options.value.find((o) => o.id === activeOptId.value)
+  if (!opt) return
+  opt.selected = Number(popupSelectedIndex.value)
+  applyChoiceInDom(editor.value, opt.id, opt.selected)
+  popupVisible.value = false
+  activeOptId.value = null
+  popupType.value = null
+}
 
-  function chooseAndClose(index) {
-    const opt = options.value.find((o) => o.id === activeOptId.value)
-    if (!opt) return
+function chooseAndClose(index) {
+  const opt = options.value.find((o) => o.id === activeOptId.value)
+  if (!opt) return
+  // for single-type we've made the popup show only the opposite action, so map the single popup index (0)
+  // to the desired selected index (toggle between 0 and 1)
+  if (opt.type === 'single') {
+    opt.selected = opt.selected === 0 ? 1 : 0
+  } else {
     opt.selected = Number(index)
-    applyChoiceInDom(editor.value, opt.id, opt.selected)
-    popupVisible.value = false
-    activeOptId.value = null
-    popupType.value = null
   }
+  applyChoiceInDom(editor.value, opt.id, opt.selected)
+  popupVisible.value = false
+  activeOptId.value = null
+  popupType.value = null
+}
 
-  function openPopupForVar(varName, rect) {
-    const v = varDefs.value.find((x) => x.name === varName)
-    if (!v) return
-    activeVarName.value = varName
-    popupSelectedIndex.value = Number(v.selected || 0)
-    popupX.value = rect.left + window.scrollX
-    popupY.value = rect.bottom + window.scrollY + 6
-    popupType.value = 'var'
-    activeOptId.value = null
-    popupVisible.value = true
+function openPopupForVar(varName, rect) {
+  const v = varDefs.value.find((x) => x.name === varName)
+  if (!v) return
+  activeVarName.value = varName
+  popupSelectedIndex.value = Number(v.selected || 0)
+  popupX.value = rect.left + window.scrollX
+  popupY.value = rect.bottom + window.scrollY + 6
+  popupType.value = 'var'
+  activeOptId.value = null
+  popupVisible.value = true
+}
+
+function chooseVarFromPopup(index) {
+  const v = varDefs.value.find((x) => x.name === activeVarName.value)
+  if (!v) return
+  v.selected = Number(index)
+  applyVarChoiceInDom(editor.value, v.name, v.selected, v.choices)
+  // also update any tokens in DOM (text nodes)
+  replaceVarTokensInDom(editor.value, varDefs.value)
+  popupVisible.value = false
+  activeVarName.value = null
+  popupType.value = null
+}
+
+// choose from the topmenu inline list (no dropdown) — apply immediately
+// NOTE: topmenu inline options removed per user request — keep inline popup only
+
+function onEditorClick(e) {
+  // detect bracket option spans
+  const spanOpt = e.target.closest && e.target.closest('.bracket-opt')
+  if (spanOpt) {
+    const id = spanOpt.getAttribute('data-opt-id')
+    const rect = spanOpt.getBoundingClientRect()
+    openPopupForOpt(id, rect)
+    return
   }
-
-  function chooseVarFromPopup(index) {
-    const v = varDefs.value.find((x) => x.name === activeVarName.value)
-    if (!v) return
-    v.selected = Number(index)
-    applyVarChoiceInDom(editor.value, v.name, v.selected, v.choices)
-    // also update any tokens in DOM (text nodes)
-    replaceVarTokensInDom(editor.value, varDefs.value)
-    popupVisible.value = false
-    activeVarName.value = null
-    popupType.value = null
+  // detect variable spans
+  const spanVar = e.target.closest && e.target.closest('.bracket-var')
+  if (spanVar) {
+    const name = spanVar.getAttribute('data-var-name')
+    const rect = spanVar.getBoundingClientRect()
+    openPopupForVar(name, rect)
+    return
   }
+  // click outside bracket closes popup
+  if (popupVisible.value) popupVisible.value = false
+}
 
-  // choose from the topmenu inline list (no dropdown) — apply immediately
-  // NOTE: topmenu inline options removed per user request — keep inline popup only
-
-  function onEditorClick(e) {
-    // detect bracket option spans
-    const spanOpt = e.target.closest && e.target.closest('.bracket-opt')
-    if (spanOpt) {
-      const id = spanOpt.getAttribute('data-opt-id')
-      const rect = spanOpt.getBoundingClientRect()
-      openPopupForOpt(id, rect)
-      return
+// compute popup items depending on popupType
+const popupItems = computed(() => {
+  if (!popupType.value) return []
+  if (popupType.value === 'opt') {
+    const o = options.value.find((x) => x.id === activeOptId.value) || { choices: [] }
+    // For single-type options we present only the opposite action label:
+    // - if currently selected (0) => 'Hiện' -> show only 'Không hiện' to allow hiding
+    // - if currently hidden (1) => 'Không hiện' -> show only 'Hiện' to allow showing
+    if (o.type === 'single') {
+      const sel = Number(o.selected || 0)
+      return sel === 0 ? ['Không hiện'] : ['Hiện']
     }
-    // detect variable spans
-    const spanVar = e.target.closest && e.target.closest('.bracket-var')
-    if (spanVar) {
-      const name = spanVar.getAttribute('data-var-name')
-      const rect = spanVar.getBoundingClientRect()
-      openPopupForVar(name, rect)
-      return
-    }
-    // click outside bracket closes popup
-    if (popupVisible.value) popupVisible.value = false
+    return o.choices || []
   }
-
-  // compute popup items depending on popupType
-  const popupItems = computed(() => {
-    if (!popupType.value) return []
-    if (popupType.value === 'opt') {
-      const o = options.value.find((x) => x.id === activeOptId.value) || { choices: [] }
-      return o.choices || []
-    }
-    if (popupType.value === 'var') {
-      const v = varDefs.value.find((x) => x.name === activeVarName.value) || { choices: [] }
-      return v.choices || []
-    }
-    return []
-  })
-
-  function popupChoose(index) {
-    if (popupType.value === 'opt') return chooseAndClose(index)
-    if (popupType.value === 'var') return chooseVarFromPopup(index)
+  if (popupType.value === 'var') {
+    const v = varDefs.value.find((x) => x.name === activeVarName.value) || { choices: [] }
+    return v.choices || []
   }
+  return []
+})
+
+function popupChoose(index) {
+  if (popupType.value === 'opt') return chooseAndClose(index)
+  if (popupType.value === 'var') return chooseVarFromPopup(index)
+}
 
 function onInput() {
   // ensure bracket spans stay non-editable; re-apply contenteditable=false
@@ -240,16 +243,16 @@ function onInput() {
   }, 600)
 }
 
-  async function onCopy() {
-    if (!editor.value) return
-    const text = getPlainTextFromContainer(editor.value)
-    try {
-      await navigator.clipboard.writeText(text)
-      emit('copy', text)
-    } catch (err) {
-      console.error('copy failed', err)
-    }
+async function onCopy() {
+  if (!editor.value) return
+  const text = getPlainTextFromContainer(editor.value)
+  try {
+    await navigator.clipboard.writeText(text)
+    emit('copy', text)
+  } catch (err) {
+    console.error('copy failed', err)
   }
+}
 
 // expose a small API so parent can trigger copy or read current html
 defineExpose({
@@ -258,82 +261,209 @@ defineExpose({
 })
 
 // ensure initial spans are non-editable after mount
-  onMounted(() => {
-    setTimeout(() => onInput(), 50)
-    // attach click listener to editor for bracket clicks
-    if (editor.value) editor.value.addEventListener('click', onEditorClick)
-    // close popup on outside click; treat bracket-var as inside-target as well
-    document.addEventListener('click', (ev) => {
-      const withinOpt = ev.target.closest && ev.target.closest('.bracket-opt')
-      const withinVar = ev.target.closest && ev.target.closest('.bracket-var')
-      const inPopup = ev.target.closest && ev.target.closest('.bracket-popup')
-      if (!withinOpt && !withinVar && !inPopup) popupVisible.value = false
-    })
+onMounted(() => {
+  setTimeout(() => onInput(), 50)
+  // attach click listener to editor for bracket clicks
+  if (editor.value) editor.value.addEventListener('click', onEditorClick)
+  // close popup on outside click; treat bracket-var as inside-target as well
+  document.addEventListener('click', (ev) => {
+    const withinOpt = ev.target.closest && ev.target.closest('.bracket-opt')
+    const withinVar = ev.target.closest && ev.target.closest('.bracket-var')
+    const inPopup = ev.target.closest && ev.target.closest('.bracket-popup')
+    if (!withinOpt && !withinVar && !inPopup) popupVisible.value = false
   })
+})
 </script>
 
 <style scoped>
 /* minimal local styles: main visual rules are in ProtocolDisplay */
-.opt-label{font-size:13px;color:#334155}
-/* protocols__vardefs removed — variable selection is inline via clickable pills */
-.protocols__editor{flex:1}
-.protocols__editor-inner{display:flex;flex-direction:column;height:100%}
-.protocols__title-selected{margin:0 0 12px 0}
-.protocols__editor-area{flex:1;display:flex;flex-direction:column;min-height:0}
-.protocols__editor-content{width:100%;border-radius:8px;border:1px solid #e6eef8;padding:12px;font-family:inherit;outline:none;overflow:auto;flex:1;min-height:0;text-align:left;/* reserve space for sticky bottom bar */padding-bottom:calc(var(--bottombar-height,56px) + 12px)}
-.bracket-opt{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  background:linear-gradient(90deg,#fff7cc,#fde68a);
-  border:1px solid #f0c57a;
-  padding:4px 10px;
-  border-radius:8px;
-  margin:0 4px;
-  /* allow text to wrap inside the pill */
-  white-space:normal;
-  word-break:break-word;
-  word-wrap:break-word;
-  max-width:36rem;
-  font-weight:700!important;
-  color:#091427;
-  box-shadow:0 1px 0 rgba(15,23,42,0.03);
+.opt-label {
+  font-size: 13px;
+  color: #334155
 }
-.bracket-opt strong{font-weight:700;color:inherit}
-.bracket-empty{opacity:0.95;padding:6px 12px;border-radius:999px;background:#f1f5f9;border:1px dashed #cbd5e1;cursor:pointer;font-weight:700;color:#1f2937;margin:0 4px}
-.protocols__empty{color:#475569;padding:30px;text-align:center}
-.protocols__error{color:#b91c1c}
+
+/* protocols__vardefs removed — variable selection is inline via clickable pills */
+.protocols__editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0
+}
+
+.protocols__editor-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden
+}
+
+.protocols__title-selected {
+  margin: 0 0 12px 0;
+  flex-shrink: 0
+}
+
+.protocols__editor-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden
+}
+
+.protocols__editor-content {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e6eef8;
+  padding: 12px;
+  font-family: inherit;
+  outline: none;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  text-align: left;
+  padding-bottom: 80px
+}
+
+.bracket-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(90deg, #fff7cc, #fde68a);
+  border: 1px solid #f0c57a;
+  padding: 4px 10px;
+  border-radius: 8px;
+  margin: 0 4px;
+  /* allow text to wrap inside the pill */
+  white-space: normal;
+  word-break: break-word;
+  word-wrap: break-word;
+  max-width: 36rem;
+  font-weight: 700 !important;
+  color: #091427;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+}
+
+.bracket-opt strong {
+  font-weight: 700;
+  color: inherit
+}
+
+.bracket-empty {
+  opacity: 0.95;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  cursor: pointer;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 4px
+}
+
+.protocols__empty {
+  color: #475569;
+  padding: 30px;
+  text-align: center
+}
+
+.protocols__error {
+  color: #b91c1c
+}
 </style>
 
 <style>
-.bracket-popup{position:absolute;z-index:9999;background:#fff;border:1px solid #e6eef8;padding:6px;border-radius:6px;box-shadow:0 6px 18px rgba(2,6,23,.08)}
-.bracket-list{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:auto;min-width:160px}
-.bracket-list li{padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent}
-.bracket-list li:hover{background:#f8fafc;border-color:#e6eef8}
+.bracket-popup {
+  position: absolute;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #e6eef8;
+  padding: 6px;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, .08)
+}
+
+.bracket-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  overflow: auto;
+  min-width: 160px
+}
+
+.bracket-list li {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent
+}
+
+.bracket-list li:hover {
+  background: #f8fafc;
+  border-color: #e6eef8
+}
 </style>
 
 <!-- global styles for bracket markers inserted via v-html (must not be scoped) -->
 <style>
-.bracket-opt{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  background:linear-gradient(90deg,#fff7cc,#fde68a);
-  border:1px solid #f0c57a;
-  padding:4px 10px;
-  border-radius:8px;
-  margin:0 4px;
+.bracket-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(90deg, #fff7cc, #fde68a);
+  border: 1px solid #f0c57a;
+  padding: 4px 10px;
+  border-radius: 8px;
+  margin: 0 4px;
   /* allow text to wrap inside the pill */
-  white-space:normal;
-  word-break:break-word;
-  word-wrap:break-word;
-  max-width:36rem;
-  font-weight:700 !important;
-  color:#091427;
-  box-shadow:0 1px 0 rgba(15,23,42,0.03);
+  white-space: normal;
+  word-break: break-word;
+  word-wrap: break-word;
+  max-width: 36rem;
+  font-weight: 700 !important;
+  color: #091427;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
 }
-.bracket-opt strong{font-weight:700;color:inherit}
-.bracket-empty{    min-width: 100px;
+
+.bracket-opt strong {
+  font-weight: 700;
+  color: inherit
 }
-.bracket-var{display:inline-flex;align-items:center;gap:6px;background:#e6f0ff;border:1px solid #9fc2ff;padding:4px 10px;border-radius:999px;margin:0 4px;color:#043069;font-weight:700}
+
+.bracket-empty {
+  min-width: 100px;
+}
+
+.bracket-var {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e6f0ff;
+  border: 1px solid #9fc2ff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin: 0 4px;
+  color: #043069;
+  font-weight: 700
+}
+</style>
+
+<style>
+.bracket-empty .bracket-empty-preview {
+  opacity: 0.8;
+  color: #334155;
+  font-style: italic;
+  pointer-events: none;
+  user-select: none
+}
+
+.bracket-empty .bracket-empty-preview::before {
+  content: '';
+  margin-right: 4px
+}
 </style>

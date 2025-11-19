@@ -93,7 +93,7 @@ export function parseBracketsToHtml(rawText = '') {
       const tmp = inner.replace(/\/\//g, PLACEHOLDER)
       choices = tmp.split('/').map((s) => s.replace(new RegExp(PLACEHOLDER, 'g'), '/').trim()).filter(Boolean)
     } else {
-      // single phrase -> two choices: Có (phrase) or Không (remove)
+      // single phrase -> two choices: Hiện (show phrase) or Không hiện (hide)
       choices = [inner]
       type = 'single'
     }
@@ -103,13 +103,19 @@ export function parseBracketsToHtml(rawText = '') {
   const displayOriginal = type === 'single' ? inner.replace(/\/\//g, '/') : (choices[0] || inner)
 
     // create option descriptor
+    // detect if this single/multi option references a variable token like $name$
+    let varRef = null
+    const varRefMatch2 = inner.match(/\$([^\$]+)\$/)
+    if (varRefMatch2) varRef = varRefMatch2[1].trim()
+
     const opt = {
       id,
       type,
       original: inner,
-      choices: type === 'single' ? ['Có', 'Không'] : choices,
-      // for single, value mapping will be handled by ProtocolViewer
-      selected: 0
+      // single -> Hiện / Không hiện; multi -> actual choices array
+      choices: type === 'single' ? ['Hiện', 'Không hiện'] : choices,
+      selected: 0,
+      varRef
     }
     options.push(opt)
 
@@ -121,7 +127,9 @@ export function parseBracketsToHtml(rawText = '') {
   // format label preserving bold/newlines (use displayOriginal for single-type to show single slash)
   const innerHtml = formatInlineToHtml(displayOriginal)
 
-  out += `<span class="bracket-opt" contenteditable="false" data-opt-id="${id}" data-opt-type="${type}" data-opt-original="${escapeHtml(displayOriginal)}" data-opt-choices="${dataChoices}">${innerHtml}</span>`
+    // include an attribute referencing the linked variable (if present) so DOM updates can sync
+    const refAttr = varRef ? ` data-opt-ref-var="${escapeHtml(varRef)}"` : ''
+    out += `<span class="bracket-opt" contenteditable="false" data-opt-id="${id}" data-opt-type="${type}" data-opt-original="${escapeHtml(displayOriginal)}" data-opt-choices="${dataChoices}"${refAttr}>${innerHtml}</span>`
 
     lastIndex = re.lastIndex
   }
@@ -159,15 +167,61 @@ export function applyChoiceInDom(containerEl, optId, selectedIndex) {
 
   const type = span.getAttribute('data-opt-type')
   if (type === 'single') {
-    const original = span.getAttribute('data-opt-original') || ''
+    const originalEscaped = span.getAttribute('data-opt-original') || ''
+    const varRef = span.getAttribute('data-opt-ref-var')
+    // helper to find variable span html
+    function findVarHtml(name) {
+      if (!name) return ''
+      const vs = containerEl.querySelector(`[data-var-name="${name}"]`)
+      return vs ? vs.innerHTML : ''
+    }
+
     if (selectedIndex === 0) {
-      // Có -> show original phrase (format inline)
-      span.innerHTML = formatInlineToHtml(original)
-      span.classList.remove('bracket-empty')
+      // Hiện -> show original phrase; if original contains $var$ token, replace it with current var HTML
+      if (varRef) {
+        // originalEscaped was escapeHtml(displayOriginal). Decode to plain text
+        const tmp = document.createElement('div')
+        tmp.innerHTML = originalEscaped
+        const decoded = tmp.textContent || ''
+        const parts = decoded.split(`$${varRef}$`)
+        const frag = document.createDocumentFragment()
+        parts.forEach((part, idx) => {
+          if (part) frag.appendChild(document.createTextNode(part))
+          if (idx !== parts.length - 1) {
+            const wrapper = document.createElement('div')
+            wrapper.innerHTML = findVarHtml(varRef) || ''
+            Array.from(wrapper.childNodes).forEach((n) => frag.appendChild(n.cloneNode(true)))
+          }
+        })
+        // replace span contents
+        span.innerHTML = ''
+        span.classList.remove('bracket-empty')
+        span.appendChild(frag)
+      } else {
+        span.innerHTML = formatInlineToHtml(originalEscaped)
+        span.classList.remove('bracket-empty')
+      }
     } else {
-      // Không -> hide content but keep placeholder marker (zero-width space)
-      span.innerHTML = '\u200B'
-      span.classList.add('bracket-empty')
+      // Không hiện -> show a muted preview of the original phrase (data-opt-original).
+      // If the original references a variable token ($name$), substitute the current var HTML into the preview.
+      try {
+        const tmp2 = document.createElement('div')
+        tmp2.innerHTML = originalEscaped
+        const decoded = tmp2.textContent || ''
+        let previewHtml = ''
+        if (varRef) {
+          const varHtml = findVarHtml(varRef) || ''
+          const parts = decoded.split(`$${varRef}$`)
+          previewHtml = parts.map((p, idx) => escapeHtml(p) + (idx !== parts.length - 1 ? varHtml : '')).join('')
+        } else {
+          previewHtml = escapeHtml(decoded)
+        }
+        span.innerHTML = `<span class="bracket-empty-preview">(ẩn) ${previewHtml}</span>`
+        span.classList.add('bracket-empty')
+      } catch (e) {
+        span.innerHTML = '\u200B'
+        span.classList.add('bracket-empty')
+      }
     }
   } else {
     // multi
@@ -189,6 +243,53 @@ export function applyVarChoiceInDom(containerEl, varName, selectedIndex, choices
       s.innerHTML = formatInlineToHtml(val)
     }
   })
+
+  // Also update any bracket-opt that references this var via data-opt-ref-var
+  // iterate all bracket-opt spans and refresh those that reference this var
+  try {
+    const list = containerEl.querySelectorAll('.bracket-opt')
+    list.forEach((opt) => {
+      const ref = opt.getAttribute('data-opt-ref-var')
+      if (!ref) return
+      if (ref !== String(varName)) return
+      const varHtml = (containerEl.querySelector(`[data-var-name="${varName}"]`) || { innerHTML: '' }).innerHTML
+      if (opt.classList.contains('bracket-empty')) {
+        // currently hidden state -> show muted preview of the original phrase (with var substitution)
+        try {
+          const originalEscaped2 = opt.getAttribute('data-opt-original') || ''
+          const tmp3 = document.createElement('div')
+          tmp3.innerHTML = originalEscaped2
+          const decoded2 = tmp3.textContent || ''
+          const parts2 = decoded2.split(`$${varName}$`)
+          const preview2 = parts2.map((p, idx) => escapeHtml(p) + (idx !== parts2.length - 1 ? varHtml : '')).join('')
+          opt.innerHTML = `<span class="bracket-empty-preview">(ẩn) ${preview2}</span>`
+        } catch (e) {
+          const safeHtml2 = varHtml || ''
+          opt.innerHTML = `<span class="bracket-empty-preview">(ẩn) ${safeHtml2}</span>` || '\u200B'
+        }
+      } else {
+        // visible state: replace token occurrences in original attribute with varHtml
+        const originalEscaped = opt.getAttribute('data-opt-original') || ''
+        const tmp = document.createElement('div')
+        tmp.innerHTML = originalEscaped
+        const decoded = tmp.textContent || ''
+        const parts = decoded.split(`$${varName}$`)
+        const frag = document.createDocumentFragment()
+        parts.forEach((part, idx) => {
+          if (part) frag.appendChild(document.createTextNode(part))
+          if (idx !== parts.length - 1) {
+            const wrapper = document.createElement('div')
+            wrapper.innerHTML = varHtml || ''
+            Array.from(wrapper.childNodes).forEach((n) => frag.appendChild(n.cloneNode(true)))
+          }
+        })
+        opt.innerHTML = ''
+        opt.appendChild(frag)
+      }
+    })
+  } catch (e) {
+    // ignore selector errors and bail
+  }
 }
 
 /** Replace literal $name$ tokens found in text nodes under containerEl with non-editable variable spans.
