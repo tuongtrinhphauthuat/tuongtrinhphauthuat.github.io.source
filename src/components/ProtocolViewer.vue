@@ -5,7 +5,12 @@
       <div v-if="!current" class="protocols__empty">Select a protocol to view or edit</div>
 
       <div v-else class="protocols__editor-inner">
-        <h2 class="protocols__title-selected">{{ nameOf(current) }}</h2>
+        <h2 class="protocols__title-selected">
+          <span class="title-text">{{ nameOf(current) }}</span>
+          <div class="title-icons" role="toolbar" aria-label="Protocol actions">
+            <button class="viewer-icon-btn" @click.stop.prevent="doReset" title="Reset to default">⟲</button>
+          </div>
+        </h2>
         <!-- variable selectors removed — variable pills are clickable inline now -->
 
         <div class="protocols__editor-area">
@@ -26,7 +31,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, nextTick } from 'vue'
 import { parseBracketsToHtml, applyChoiceInDom, applyVarChoiceInDom, replaceVarTokensInDom, getPlainTextFromContainer } from '../services/bracketService'
 
 const props = defineProps({
@@ -36,7 +41,7 @@ const props = defineProps({
   // optional draftHtml allows the parent to ask the viewer to render a saved draft/html snapshot
   draftHtml: { type: String, default: null }
 })
-const emit = defineEmits(['copy', 'edited'])
+const emit = defineEmits(['copy', 'edited', 'reset'])
 
 const editor = ref(null)
 const editorHtml = ref('')
@@ -54,27 +59,45 @@ const saveTimer = ref(null)
 watch(
   () => props.current,
   (nv) => {
-    // if a draftHtml is provided by parent, that takes precedence
-    if (props.draftHtml) {
-      editorHtml.value = props.draftHtml
-    } else {
-      const raw = nv ? nv['Nội dung'] || nv['content'] || '' : ''
-      const parsed = parseBracketsToHtml(raw)
-      editorHtml.value = parsed.html
-      // initialize options with selected index default 0
-      options.value = parsed.options.map((o) => ({ ...o }))
-      varDefs.value = (parsed.varDefs || []).map((v) => ({ ...v }))
-    }
-    // after DOM renders, apply initial choices to ensure spans contain labels
-    setTimeout(() => {
-      options.value.forEach((o) => applyChoiceInDom(editor.value, o.id, o.selected))
-      varDefs.value.forEach((v) => applyVarChoiceInDom(editor.value, v.name, v.selected, v.choices))
-      // ensure any remaining literal $name$ tokens in text nodes are replaced by variable spans
-      replaceVarTokensInDom(editor.value, varDefs.value)
-    })
+    loadContent(nv)
   },
   { immediate: true }
 )
+
+function loadContent(nv) {
+  // if a draftHtml is provided by parent, that takes precedence
+  if (props.draftHtml) {
+    editorHtml.value = props.draftHtml
+  } else {
+    const raw = nv ? nv['Nội dung'] || nv['content'] || '' : ''
+    const parsed = parseBracketsToHtml(raw)
+    editorHtml.value = parsed.html
+    // initialize options with selected index default 0
+    options.value = parsed.options.map((o) => ({ ...o }))
+    varDefs.value = (parsed.varDefs || []).map((v) => ({ ...v }))
+  }
+  // after DOM renders, apply initial choices to ensure spans contain labels
+  setTimeout(() => {
+    options.value.forEach((o) => applyChoiceInDom(editor.value, o.id, o.selected))
+    varDefs.value.forEach((v) => applyVarChoiceInDom(editor.value, v.name, v.selected, v.choices))
+    // ensure any remaining literal $name$ tokens in text nodes are replaced by variable spans
+    replaceVarTokensInDom(editor.value, varDefs.value)
+    // ensure spans are non-editable right after initial DOM setup
+    try {
+      const spans = editor.value ? editor.value.querySelectorAll('.bracket-opt') : []
+      spans.forEach && spans.forEach((s) => s.setAttribute && s.setAttribute('contenteditable', 'false'))
+      const varspans = editor.value ? editor.value.querySelectorAll('.bracket-var') : []
+      varspans.forEach && varspans.forEach((s) => s.setAttribute && s.setAttribute('contenteditable', 'false'))
+      // ensure editor has the click handler attached so bracket clicks open the popup
+      if (editor.value && !editor.value._bracketClickAttached) {
+        editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
+        try { editor.value._bracketClickAttached = true } catch (e) {}
+      }
+    } catch (e) {
+      // ignore
+    }
+  })
+}
 
 // watch for draftHtml changes (preview/restore from parent)
 watch(
@@ -86,6 +109,13 @@ watch(
     setTimeout(() => {
       const spans = editor.value ? editor.value.querySelectorAll('.bracket-opt') : []
       spans.forEach && spans.forEach((s) => s.setAttribute && s.setAttribute('contenteditable', 'false'))
+      const varspans = editor.value ? editor.value.querySelectorAll('.bracket-var') : []
+      varspans.forEach && varspans.forEach((s) => s.setAttribute && s.setAttribute('contenteditable', 'false'))
+      // ensure editor has the click handler attached so bracket clicks open the popup
+      if (editor.value && !editor.value._bracketClickAttached) {
+        editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
+        try { editor.value._bracketClickAttached = true } catch (e) {}
+      }
     })
   },
   { immediate: false }
@@ -93,6 +123,14 @@ watch(
 
 function nameOf(obj) {
   return obj && (obj['Tên'] || obj['name'] || obj['Name'] || obj['title'] || '')
+}
+
+function doReset() {
+  try {
+    emit('reset')
+  } catch (e) {
+    // fallback: no-op
+  }
 }
 
 function onOptionChange(opt) {
@@ -109,14 +147,14 @@ function chooseVar(varName, index) {
   replaceVarTokensInDom(editor.value, varDefs.value)
 }
 
-function openPopupForOpt(optId, rect) {
+function openPopupForOpt(optId, x, y) {
   const opt = options.value.find((o) => o.id === optId)
   if (!opt) return
   activeOptId.value = optId
   popupSelectedIndex.value = Number(opt.selected || 0)
-  // position popup under the span
-  popupX.value = rect.left + window.scrollX
-  popupY.value = rect.bottom + window.scrollY + 6
+  // position popup: x at mouse, y at bottom of element
+  popupX.value = x
+  popupY.value = y
   popupType.value = 'opt'
   activeVarName.value = null
   popupVisible.value = true
@@ -148,13 +186,13 @@ function chooseAndClose(index) {
   popupType.value = null
 }
 
-function openPopupForVar(varName, rect) {
+function openPopupForVar(varName, x, y) {
   const v = varDefs.value.find((x) => x.name === varName)
   if (!v) return
   activeVarName.value = varName
   popupSelectedIndex.value = Number(v.selected || 0)
-  popupX.value = rect.left + window.scrollX
-  popupY.value = rect.bottom + window.scrollY + 6
+  popupX.value = x
+  popupY.value = y
   popupType.value = 'var'
   activeOptId.value = null
   popupVisible.value = true
@@ -176,20 +214,27 @@ function chooseVarFromPopup(index) {
 // NOTE: topmenu inline options removed per user request — keep inline popup only
 
 function onEditorClick(e) {
+  // normalize event target: clicks can land on text nodes, so ensure we have an Element
+  let tgt = e && e.target ? e.target : null
+  if (!tgt) return
+  if (tgt.nodeType === Node.TEXT_NODE) tgt = tgt.parentElement
+
   // detect bracket option spans
-  const spanOpt = e.target.closest && e.target.closest('.bracket-opt')
+  const spanOpt = tgt.closest ? tgt.closest('.bracket-opt') : null
   if (spanOpt) {
     const id = spanOpt.getAttribute('data-opt-id')
     const rect = spanOpt.getBoundingClientRect()
-    openPopupForOpt(id, rect)
+    // use mouse X, but element bottom Y
+    openPopupForOpt(id, e.clientX, rect.bottom + 4)
     return
   }
   // detect variable spans
-  const spanVar = e.target.closest && e.target.closest('.bracket-var')
+  const spanVar = tgt.closest ? tgt.closest('.bracket-var') : null
   if (spanVar) {
     const name = spanVar.getAttribute('data-var-name')
     const rect = spanVar.getBoundingClientRect()
-    openPopupForVar(name, rect)
+    // use mouse X, but element bottom Y
+    openPopupForVar(name, e.clientX, rect.bottom + 4)
     return
   }
   // click outside bracket closes popup
@@ -257,22 +302,41 @@ async function onCopy() {
 // expose a small API so parent can trigger copy or read current html
 defineExpose({
   copyEditor: onCopy,
-  getEditorHtml: () => (editor.value ? editor.value.innerHTML : editorHtml.value)
+  getEditorHtml: () => (editor.value ? editor.value.innerHTML : editorHtml.value),
+  reset: async () => {
+    // hide any open popup and reload content after DOM stabilizes
+    popupVisible.value = false
+    await nextTick()
+    loadContent(props.current)
+    // ensure click handler attached after reload
+    setTimeout(() => {
+      if (editor.value && !editor.value._bracketClickAttached) {
+        editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
+        try { editor.value._bracketClickAttached = true } catch (e) {}
+      }
+    }, 40)
+  }
 })
 
-// ensure initial spans are non-editable after mount
-onMounted(() => {
-  setTimeout(() => onInput(), 50)
-  // attach click listener to editor for bracket clicks
-  if (editor.value) editor.value.addEventListener('click', onEditorClick)
-  // close popup on outside click; treat bracket-var as inside-target as well
-  document.addEventListener('click', (ev) => {
-    const withinOpt = ev.target.closest && ev.target.closest('.bracket-opt')
-    const withinVar = ev.target.closest && ev.target.closest('.bracket-var')
-    const inPopup = ev.target.closest && ev.target.closest('.bracket-popup')
-    if (!withinOpt && !withinVar && !inPopup) popupVisible.value = false
+  // ensure initial spans are non-editable after mount
+  onMounted(() => {
+    setTimeout(() => onInput(), 50)
+    // attach click listener to editor for bracket clicks if not already attached
+    if (editor.value && !editor.value._bracketClickAttached) {
+      editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
+      try { editor.value._bracketClickAttached = true } catch (e) {}
+    }
+    // close popup on outside click; treat bracket-var as inside-target as well
+    // normalize event target to handle text nodes (clicks on text nodes inside spans)
+    document.addEventListener('click', (ev) => {
+      let t = ev.target
+      if (t && t.nodeType === Node.TEXT_NODE) t = t.parentElement
+      const withinOpt = t && t.closest ? t.closest('.bracket-opt') : null
+      const withinVar = t && t.closest ? t.closest('.bracket-var') : null
+      const inPopup = t && t.closest ? t.closest('.bracket-popup') : null
+      if (!withinOpt && !withinVar && !inPopup) popupVisible.value = false
+    })
   })
-})
 </script>
 
 <style scoped>
@@ -301,7 +365,23 @@ onMounted(() => {
 
 .protocols__title-selected {
   margin: 0 0 12px 0;
-  flex-shrink: 0
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title-icons {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.viewer-icon-btn {
+  background: #fff;
+  border: 1px solid #e3e8ef;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
 }
 
 .protocols__editor-area {
@@ -375,13 +455,14 @@ onMounted(() => {
 
 <style>
 .bracket-popup {
-  position: absolute;
+  position: fixed;
   z-index: 9999;
   background: #fff;
   border: 1px solid #e6eef8;
   padding: 6px;
   border-radius: 6px;
-  box-shadow: 0 6px 18px rgba(2, 6, 23, .08)
+  box-shadow: 0 6px 18px rgba(2, 6, 23, .08);
+  max-width: 360px
 }
 
 .bracket-list {
@@ -400,7 +481,10 @@ onMounted(() => {
   padding: 8px 10px;
   border-radius: 6px;
   cursor: pointer;
-  border: 1px solid transparent
+  border: 1px solid transparent;
+  white-space: normal;
+  word-break: break-word;
+  word-wrap: break-word
 }
 
 .bracket-list li:hover {

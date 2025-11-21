@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "build:single": "vite build && node ./build-inline/singlefile.js",
-    "inline:dist": "node ./build-inline/singlefile.js"
+    "inline:dist": "node ./build-inline/singlefile.js",
+    "deploy": "node deploy.js"
   },
   "dependencies": {
     "pinia": "^2.1.7",

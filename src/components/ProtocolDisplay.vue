@@ -4,11 +4,30 @@
       @open-edit="openEditLink" @open-settings="showSettings = true" />
     <div class="protocols__main">
       <ProtocolViewer ref="viewerRef" :current="current" :loading="store.loading" :error="store.error"
-        :draftHtml="draftHtmlForViewer" @copy="onCopy" @edited="onEdited" />
+        :draftHtml="viewerContentOverride" @copy="onCopy" @edited="onEdited" @reset="onViewerReset" />
+
+      <LoadingProgress v-if="store.loading" />
+
+      <div v-if="versionPopoverVisible" ref="versionPopoverRef" class="versions-popover" :style="{ left: versionPopoverX + 'px', top: versionPopoverY + 'px' }" @mouseenter="clearVersionPopoverHideTimer" @mouseleave="versionPopoverVisible = false">
+        <ul style="list-style:none;padding:6px;margin:0;display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:auto">
+          <li style="font-size:13px;color:#475569;padding:6px 0">
+            <button class="icon-btn" @click.prevent="restoreEditingFromPopover">Phiên bản đang chỉnh sửa: <strong style="color:#0f172a">{{ draftHtmlForViewer ? 'Draft' : 'Current' }}</strong></button>
+          </li>
+          <li v-for="(v, idx) in currentVersions" :key="v.ts" style="display:flex;gap:8px;align-items:center">
+            <div style="flex:1;text-align:left">
+              <button class="icon-btn" style="width:100%;text-align:left;background:transparent;border:none;padding:6px 8px;" @click.prevent="previewVersionFromPopover(idx)">
+                <div style="font-size:13px;color:#0f172a;">#{{ idx + 1 }} — {{ v.title || ('Saved ' + new Date(v.ts).toLocaleString()) }}</div>
+                <div style="font-size:12px;color:#64748b;max-height:3rem;overflow:hidden">{{ (v.text || '').slice(0, 140) }}</div>
+              </button>
+            </div>
+          </li>
+        </ul>
+      </div>
 
       <!-- bottom menu moved here -->
       <div class="protocols__bottombar">
         <button class="icon-btn" @click="doCopy">Copy</button>
+        <button class="icon-btn" @click="copySource">Copy source</button>
         <button class="icon-btn" @click="saveVersionNow">Save version</button>
         <button class="icon-btn" @click="openVersionsModal">Versions</button>
         <label style="display:flex;align-items:center;gap:8px;margin-left:8px">
@@ -80,15 +99,50 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch, onBeforeUnmount } from 'vue'
+import { computed, onMounted, ref, watch, onBeforeUnmount, nextTick } from 'vue'
 import { useProtocolStore } from '../stores/protocolStore'
 import Sidebar from './Sidebar.vue'
 import ProtocolViewer from './ProtocolViewer.vue'
+import { htmlToSource } from '../services/bracketReverseService'
+import LoadingProgress from './LoadingProgress.vue'
 
 const store = useProtocolStore()
 const viewerRef = ref(null)
 // draftHtml used when restoring a saved version into the viewer without writing back to store
 const draftHtmlForViewer = ref(null)
+// viewerContentOverride is used to force-update the viewer (e.g. restoring a version)
+const viewerContentOverride = ref(null)
+const previewIndex = ref(null)
+const versionPopoverVisible = ref(false)
+const versionPopoverX = ref(0)
+const versionPopoverY = ref(0)
+const versionPopoverType = ref(null)
+const versionPopoverRef = ref(null)
+let versionPopoverHideTimer = null
+
+// tracking last saved version content to avoid duplicate saves when navigating
+const lastSavedVersionHtml = ref(null)
+const lastSavedVersionAt = ref(0)
+const savingNow = ref(false)
+const suppressAutosave = ref(false)
+let suppressAutosaveTimer = null
+
+function setSuppressAutosave(ms = 800) {
+  suppressAutosave.value = true
+  if (suppressAutosaveTimer) clearTimeout(suppressAutosaveTimer)
+  suppressAutosaveTimer = setTimeout(() => {
+    suppressAutosave.value = false
+    suppressAutosaveTimer = null
+  }, ms)
+}
+
+function clearVersionPopoverHideTimer() {
+  if (versionPopoverHideTimer) {
+    clearTimeout(versionPopoverHideTimer)
+    versionPopoverHideTimer = null
+  }
+}
+
 // versioning state
 const versionsMap = ref({}) // { [id]: [versions] }
 const showVersions = ref(false)
@@ -99,6 +153,7 @@ const autosaveInterval = ref(20) // seconds, 0 = off
 const autosaveTimerId = ref(null)
 const lastAutosaveHtml = ref(null)
 const dirtyMap = ref({}) // track dirty per id
+const draftsMap = ref({}) // { [id]: html } - persistent drafts
 
 onMounted(() => {
   store.fetchProtocols()
@@ -116,6 +171,15 @@ onMounted(() => {
   } catch (e) {
     versionsMap.value = {}
   }
+
+  // load drafts from localStorage
+  const rawDrafts = localStorage.getItem('protocol_drafts_v1')
+  try {
+    draftsMap.value = rawDrafts ? JSON.parse(rawDrafts) : {}
+  } catch (e) {
+    draftsMap.value = {}
+  }
+
   // start autosave if enabled
   startAutosave()
 })
@@ -135,6 +199,119 @@ function doCopy() {
   } catch (e) {
     console.error('doCopy failed', e)
   }
+}
+
+  async function copySource() {
+    try {
+      let html = ''
+      if (viewerRef.value && viewerRef.value.getEditorHtml) html = viewerRef.value.getEditorHtml()
+      const src = htmlToSource(html || '')
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(src)
+      } else {
+        const ta = document.createElement('textarea')
+        ta.value = src
+        document.body.appendChild(ta)
+        ta.select()
+        try { document.execCommand('copy') } catch (e) {}
+        ta.remove()
+      }
+      versionsStatus.value = 'Source copied'
+    } catch (e) {
+      console.error('copySource failed', e)
+      versionsStatus.value = 'Copy failed'
+    }
+  }
+
+function onViewerReset() {
+  // clear any override and call viewer reset
+  viewerContentOverride.value = null
+  draftHtmlForViewer.value = null
+  try {
+    if (viewerRef.value && viewerRef.value.reset) viewerRef.value.reset()
+  } catch (e) {
+    console.error('viewer reset failed', e)
+  }
+  // Also remove any saved draft for the currently selected protocol so reset takes effect
+  try {
+    const id = store.selectedId ? String(store.selectedId) : null
+    if (id && draftsMap.value && Object.prototype.hasOwnProperty.call(draftsMap.value, id)) {
+      delete draftsMap.value[id]
+      try { localStorage.setItem('protocol_drafts_v1', JSON.stringify(draftsMap.value)) } catch (e) { console.error('failed persisting drafts', e) }
+    }
+  } catch (e) {
+    console.error('failed clearing draft on reset', e)
+  }
+  versionsStatus.value = 'Reset to default (draft cleared)'
+}
+
+// Prev/Next version navigation removed per request
+
+// Versions menu hover/callers removed (prev/next buttons deleted in viewer)
+
+function previewVersionFromPopover(idx) {
+  const v = currentVersions.value[idx]
+  if (!v) return
+  viewerContentOverride.value = null
+  nextTick(() => { viewerContentOverride.value = v.html })
+  draftHtmlForViewer.value = v.html
+  previewIndex.value = idx
+  versionsStatus.value = `Previewing ${idx + 1}/${currentVersions.value.length}`
+  versionPopoverVisible.value = false
+}
+
+function saveCurrentEditingAsVersion() {
+  const id = store.selectedId ? String(store.selectedId) : null
+  if (!id) return
+  if (savingNow.value) return
+  savingNow.value = true
+  try {
+    // determine current html (draft or live)
+    let html = draftHtmlForViewer.value
+    try {
+      if (!html && viewerRef.value && viewerRef.value.getEditorHtml) html = viewerRef.value.getEditorHtml()
+    } catch (e) { }
+    if (!html) return
+
+    // avoid duplicate saves if same content was saved very recently
+    const now = Date.now()
+    if (lastSavedVersionHtml.value && lastSavedVersionHtml.value === html && (now - lastSavedVersionAt.value) < 5000) {
+      return
+    }
+    const text = typeof html === 'string' ? html.replace(/<[^>]+>/g, '') : ''
+    const arr = versionsMap.value[id] || []
+    // if latest version already matches this content, do not duplicate
+    if (arr.length > 0 && (arr[0].html === html || (arr[0].text && arr[0].text === text))) return
+    const v = { ts: now, html, text, title: `Editing ${new Date(now).toLocaleString()}`, locked: false }
+    arr.unshift(v)
+    if (arr.length > 50) arr.splice(50)
+    versionsMap.value[id] = arr
+    try { localStorage.setItem('protocol_versions_v1', JSON.stringify(versionsMap.value)) } catch (e) { console.error(e) }
+    loadVersionsForCurrent()
+    versionsStatus.value = `Saved current editing version`
+    // update last-saved tracking and sync lastAutosaveHtml to avoid autosave duplication
+    lastSavedVersionHtml.value = html
+    lastSavedVersionAt.value = now
+    try { lastAutosaveHtml.value = html } catch (e) { /* ignore */ }
+  } finally {
+    savingNow.value = false
+  }
+}
+
+function restoreEditingFromPopover() {
+  // restore the current draft into viewer (without applying to store)
+  if (!draftHtmlForViewer.value) {
+    // if no draft exists, try to read current editor html
+    try {
+      if (viewerRef.value && viewerRef.value.getEditorHtml) draftHtmlForViewer.value = viewerRef.value.getEditorHtml()
+    } catch (e) { /* ignore */ }
+  }
+  viewerContentOverride.value = null
+  nextTick(() => {
+    viewerContentOverride.value = draftHtmlForViewer.value
+  })
+  if (draftHtmlForViewer.value) versionsStatus.value = 'Restored draft'
+  versionPopoverVisible.value = false
 }
 
 const current = computed(() =>
@@ -162,8 +339,17 @@ function onEdited(payload) {
   draftHtmlForViewer.value = payload.html
   const id = String(payload.id)
   dirtyMap.value[id] = true
+
+  // Save to draftsMap and persist to localStorage
+  draftsMap.value[id] = payload.html
+  try {
+    localStorage.setItem('protocol_drafts_v1', JSON.stringify(draftsMap.value))
+  } catch (e) {
+    console.error('Failed to save drafts', e)
+  }
+
   // update small status to indicate unsaved draft
-  versionsStatus.value = `(unsaved) ${id}`
+  versionsStatus.value = `(unsaved draft) ${id}`
 }
 
 function loadVersionsForCurrent() {
@@ -180,7 +366,18 @@ function loadVersionsForCurrent() {
 watch(() => store.selectedId, () => {
   // clear draftHtml when switching and load versions list
   draftHtmlForViewer.value = null
+  viewerContentOverride.value = null
   loadVersionsForCurrent()
+
+  // Check for existing draft
+  const id = store.selectedId ? String(store.selectedId) : null
+  if (id && draftsMap.value[id]) {
+    // restore draft
+    draftHtmlForViewer.value = draftsMap.value[id]
+    viewerContentOverride.value = draftsMap.value[id]
+    versionsStatus.value = `Restored draft`
+  }
+
   // reset lastAutosaveHtml and restart autosave
   lastAutosaveHtml.value = null
   stopAutosave()
@@ -242,6 +439,8 @@ function stopAutosave() {
 }
 
 async function autoSaveTick() {
+  if (suppressAutosave.value) return
+  if (savingNow.value) return
   const id = store.selectedId ? String(store.selectedId) : null
   if (!id) return
   let html = draftHtmlForViewer.value
@@ -303,6 +502,10 @@ function closeVersionsModal() {
 
 function restoreVersion(v) {
   // set as draftHtml for viewer (preview). User can then apply to protocol using Apply button below.
+  viewerContentOverride.value = null
+  nextTick(() => {
+    viewerContentOverride.value = v.html
+  })
   draftHtmlForViewer.value = v.html
 }
 
@@ -571,6 +774,8 @@ function saveSettings() {
   display: flex;
   align-items: center;
   justify-content: center
+  ;
+  z-index: 100002;
 }
 
 .modal {
@@ -579,6 +784,18 @@ function saveSettings() {
   border-radius: 8px;
   min-width: 360px;
   max-width: 90%
+}
+
+.versions-popover {
+  position: fixed;
+  z-index: 100003;
+  background: #fff;
+  border: 1px solid #e6eef8;
+  padding: 6px;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, .08);
+  min-width: 220px;
+  max-width: 360px;
 }
 
 .modal h3 {
