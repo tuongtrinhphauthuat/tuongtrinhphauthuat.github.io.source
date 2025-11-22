@@ -12,6 +12,22 @@ function escapeSlashForOutput(s) {
   return String(s).replace(/\//g, '//')
 }
 
+function escapeHtml(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+function formatInlineToHtml(str = '') {
+  if (str == null) return ''
+  const escaped = escapeHtml(String(str))
+  const bolded = escaped.replace(/\*\*(.+?)\*\*/g, (_m, g1) => `<strong>${g1}</strong>`)
+  return bolded.replace(/\r\n|\r|\n/g, '<br>')
+}
+
 /**
  * Convert a container element or HTML string back to original bracket source.
  * - For `.bracket-opt` spans:
@@ -50,8 +66,24 @@ export function htmlToSource(input) {
         const json = span.getAttribute('data-opt-choices') || '%5B%5D'
         let choices = []
         try { choices = JSON.parse(decodeURIComponent(json)) } catch (e) { choices = [] }
+        // determine which choice is currently selected by comparing rendered HTML/text
+        const currentHtml = span.innerHTML || ''
+        const currentText = (span.textContent || '').trim()
+        let sel = -1
+        for (let i = 0; i < choices.length; i++) {
+          const candidateHtml = formatInlineToHtml(choices[i])
+          if (candidateHtml === currentHtml) { sel = i; break }
+          // fallback compare plain text
+          const tmp = document.createElement('div')
+          tmp.innerHTML = candidateHtml
+          if ((tmp.textContent || '').trim() === currentText) { sel = i; break }
+        }
+        if (sel === -1) sel = 0
         // escape any real slashes in choices using '//' to match parser's encoding
-        const out = choices.map((c) => escapeSlashForOutput(c)).join('/')
+        const out = choices.map((c, idx) => {
+          const esc = escapeSlashForOutput(c)
+          return idx === sel ? (esc + '*') : esc
+        }).join('/')
         const textNode = document.createTextNode('[' + out + ']')
         span.parentNode.replaceChild(textNode, span)
       }
@@ -62,17 +94,62 @@ export function htmlToSource(input) {
     }
   })
 
-  // replace var spans with $name$ tokens
-  const vars = Array.from(root.querySelectorAll('.bracket-var'))
-  vars.forEach((v) => {
-    try {
-      const name = v.getAttribute('data-var-name') || ''
-      const textNode = document.createTextNode('$' + name + '$')
-      v.parentNode.replaceChild(textNode, v)
-    } catch (e) {
-      const t = document.createTextNode(v.textContent || '')
-      v.parentNode.replaceChild(t, v)
+  // handle var spans: reconstruct a definition at first occurrence and tokens elsewhere
+  const varSpans = Array.from(root.querySelectorAll('.bracket-var'))
+  const varMap = {}
+  varSpans.forEach((v) => {
+    const name = v.getAttribute('data-var-name') || ''
+    if (!varMap[name]) varMap[name] = []
+    varMap[name].push(v)
+  })
+  // determine selected index for each var by inspecting first span
+  const varSelected = {}
+  Object.keys(varMap).forEach((name) => {
+    const arr = varMap[name]
+    if (!arr || arr.length === 0) return
+    const first = arr[0]
+    const json = first.getAttribute('data-var-choices') || '%5B%5D'
+    let choices = []
+    try { choices = JSON.parse(decodeURIComponent(json)) } catch (e) { choices = [] }
+    let sel = -1
+    const currentHtml = first.innerHTML || ''
+    const currentText = (first.textContent || '').trim()
+    for (let i = 0; i < choices.length; i++) {
+      const candidateHtml = formatInlineToHtml(choices[i])
+      if (candidateHtml === currentHtml) { sel = i; break }
+      const tmp = document.createElement('div')
+      tmp.innerHTML = candidateHtml
+      if ((tmp.textContent || '').trim() === currentText) { sel = i; break }
     }
+    if (sel === -1) sel = 0
+    varSelected[name] = { sel, choices }
+  })
+
+  // now replace occurrences: first -> definition, others -> $name$
+  Object.keys(varMap).forEach((name) => {
+    const arr = varMap[name]
+    const info = varSelected[name]
+    arr.forEach((span, idx) => {
+      try {
+        if (!info || !info.choices || info.choices.length === 0) {
+          const t = document.createTextNode('$' + name + '$')
+          span.parentNode.replaceChild(t, span)
+          return
+        }
+        if (idx === 0) {
+          // build definition with '*' on selected
+          const out = info.choices.map((c, i) => (i === info.sel ? escapeSlashForOutput(c) + '*' : escapeSlashForOutput(c))).join('/')
+          const textNode = document.createTextNode('[$' + name + '$=' + out + ']')
+          span.parentNode.replaceChild(textNode, span)
+        } else {
+          const t = document.createTextNode('$' + name + '$')
+          span.parentNode.replaceChild(t, span)
+        }
+      } catch (e) {
+        const t = document.createTextNode(span.textContent || '')
+        span.parentNode.replaceChild(t, span)
+      }
+    })
   })
 
   // After replacements, return plain text with tags converted as text

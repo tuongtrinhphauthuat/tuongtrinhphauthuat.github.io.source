@@ -32,7 +32,7 @@ function genId() {
  * - If bracket content is a single phrase, it's treated as single-choice: choices ['Có','Không']
  *   where 'Có' means replace with the phrase, 'Không' means remove (we keep a placeholder span to preserve position).
  */
-export function parseBracketsToHtml(rawText = '') {
+export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
   const options = []
   const varDefs = []
   const varMap = {}
@@ -67,8 +67,30 @@ export function parseBracketsToHtml(rawText = '') {
         } else {
           choicesR = [rhs]
         }
-        const vid = genId()
-  const vdef = { id: vid, name: varName, original: rhs, choices: choicesR, selected: 0 }
+        // detect starred defaults: '*' at start or end of an option
+        let selectedIndex = 0
+        const starred = []
+        choicesR = choicesR.map((c, idx) => {
+          let v = c
+          let isStar = false
+          if (v.startsWith('*')) {
+            isStar = true
+            v = v.slice(1).trim()
+          }
+          if (v.endsWith('*')) {
+            isStar = true
+            v = v.slice(0, -1).trim()
+          }
+          if (isStar) starred.push(idx)
+          return v
+        })
+        if (starred.length > 1) {
+          const info = sourceInfo ? ` at ${sourceInfo}` : ''
+          console.error(`Multiple default '*' markers found for variable '${varName}'${info}. Using first occurrence.`)
+        }
+        if (starred.length >= 1) selectedIndex = starred[0]
+          const vid = genId()
+        const vdef = { id: vid, name: varName, original: rhs, choices: choicesR, selected: selectedIndex }
   varDefs.push(vdef)
   varMap[varName] = vdef
   // create a non-editable variable span at the original location so the definition position is replaced in the content
@@ -85,6 +107,8 @@ export function parseBracketsToHtml(rawText = '') {
     // decide choice set for regular brackets
     let choices = []
     let type = 'multi'
+    // temporary selected index for this option (may be set if '*' found)
+    let __selectedIndexForThisOpt = undefined
     if (inner.includes('/')) {
       // Support escaping a literal slash inside an option using double-slash: '//'
       // Rule: '//' inside brackets means a literal '/' and must NOT be treated as a separator.
@@ -92,6 +116,30 @@ export function parseBracketsToHtml(rawText = '') {
       const PLACEHOLDER = '<<SLASH_PLACEHOLDER_9f2c>>'
       const tmp = inner.replace(/\/\//g, PLACEHOLDER)
       choices = tmp.split('/').map((s) => s.replace(new RegExp(PLACEHOLDER, 'g'), '/').trim()).filter(Boolean)
+      // detect '*' markers indicating default (start or end of option)
+      const starred = []
+      choices = choices.map((c, idx) => {
+        let v = c
+        let isStar = false
+        if (v.startsWith('*')) {
+          isStar = true
+          v = v.slice(1).trim()
+        }
+        if (v.endsWith('*')) {
+          isStar = true
+          v = v.slice(0, -1).trim()
+        }
+        if (isStar) starred.push(idx)
+        return v
+      })
+      if (starred.length > 1) {
+        const info = sourceInfo ? ` at ${sourceInfo}` : ''
+        console.error(`Multiple default '*' markers found in bracket '${inner}'${info}. Using first occurrence.`)
+      }
+      if (starred.length > 0) {
+        // set selected for this option when creating opt descriptor later
+        __selectedIndexForThisOpt = starred[0]
+      }
     } else {
       // single phrase -> two choices: Hiện (show phrase) or Không hiện (hide)
       choices = [inner]
@@ -114,7 +162,7 @@ export function parseBracketsToHtml(rawText = '') {
       original: inner,
       // single -> Hiện / Không hiện; multi -> actual choices array
       choices: type === 'single' ? ['Hiện', 'Không hiện'] : choices,
-      selected: 0,
+      selected: typeof __selectedIndexForThisOpt !== 'undefined' ? __selectedIndexForThisOpt : 0,
       varRef
     }
     options.push(opt)
@@ -334,6 +382,8 @@ export function replaceVarTokensInDom(containerEl, varDefs = []) {
             frag.appendChild(span)
           }
         })
+        // guard against detached text nodes (parentNode may be null if DOM changed)
+        if (!textNode.parentNode) return
         textNode.parentNode.replaceChild(frag, textNode)
       }
     })
