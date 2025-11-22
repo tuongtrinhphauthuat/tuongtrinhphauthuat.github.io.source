@@ -8,7 +8,19 @@
         <h2 class="protocols__title-selected">
           <span class="title-text">{{ nameOf(current) }}</span>
           <div class="title-icons" role="toolbar" aria-label="Protocol actions">
-            <button class="viewer-icon-btn" @click.stop.prevent="doReset" title="Reset to default">⟲</button>
+            <!-- Reset: double-click to reset immediately. Single click opens confirmation dialog. -->
+            <button class="viewer-icon-btn reset" @click.stop.prevent="onResetClick" @dblclick.stop.prevent="doReset"
+              title="Reset to default — double-click to reset immediately; single click opens confirmation">⟲</button>
+
+            <!-- spacer to separate reset from fullscreen to avoid accidental clicks -->
+            <div style="width:12px"></div>
+
+            <!-- Fullscreen: emit event to parent to toggle fullscreen (Ctrl+Shift+F) -->
+            <button class="viewer-icon-btn" @click.stop.prevent="$emit('toggle-fullscreen')" title="Toggle full screen (Ctrl+Shift+F)">⤢</button>
+
+            <!-- Confirmation dialog (shown when user single-clicks reset) -->
+            <ConfirmDialog v-if="showConfirm" :title="'Confirm reset'" :message="'Reset this protocol to its original default content? This cannot be undone.'"
+              confirmText="Reset" cancelText="Cancel" @confirm="onConfirmReset" @cancel="showConfirm = false" />
           </div>
         </h2>
         <!-- variable selectors removed — variable pills are clickable inline now -->
@@ -32,6 +44,7 @@
 
 <script setup>
 import { ref, watch, onMounted, computed, nextTick } from 'vue'
+import ConfirmDialog from './ConfirmDialog.vue'
 import { parseBracketsToHtml, applyChoiceInDom, applyVarChoiceInDom, replaceVarTokensInDom, getPlainTextFromContainer } from '../services/bracketService'
 
 const props = defineProps({
@@ -41,7 +54,7 @@ const props = defineProps({
   // optional draftHtml allows the parent to ask the viewer to render a saved draft/html snapshot
   draftHtml: { type: String, default: null }
 })
-const emit = defineEmits(['copy', 'edited', 'reset'])
+const emit = defineEmits(['copy', 'edited', 'reset', 'toggle-fullscreen'])
 
 const editor = ref(null)
 const editorHtml = ref('')
@@ -55,6 +68,7 @@ const activeOptId = ref(null)
 const popupType = ref(null) // 'opt' | 'var' or null
 const activeVarName = ref(null)
 const saveTimer = ref(null)
+const showConfirm = ref(false)
 
 watch(
   () => props.current,
@@ -131,6 +145,16 @@ function doReset() {
   } catch (e) {
     // fallback: no-op
   }
+}
+
+function onResetClick() {
+  // open confirmation dialog on single click; actual reset occurs on dblclick or confirm
+  showConfirm.value = true
+}
+
+function onConfirmReset() {
+  showConfirm.value = false
+  doReset()
 }
 
 function onOptionChange(opt) {
@@ -373,7 +397,7 @@ defineExpose({
 .title-icons {
   margin-left: auto;
   display: flex;
-  gap: 6px;
+  gap: 10px;
 }
 .viewer-icon-btn {
   background: #fff;
@@ -382,6 +406,12 @@ defineExpose({
   border-radius: 6px;
   cursor: pointer;
   font-weight: 700;
+}
+
+.viewer-icon-btn.reset {
+  background: #fff7f7;
+  border-color: #fecaca;
+  color: #b91c1c;
 }
 
 .protocols__editor-area {

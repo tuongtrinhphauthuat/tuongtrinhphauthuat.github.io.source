@@ -6,22 +6,26 @@
     </div>
 
     <ul class="protocols__list">
-      <li v-for="(item, idx) in filtered" :key="idOf(item) || nameOf(item) || idx"
+      <li v-for="(item, idx) in filtered" :key="idOf(item) || nameOf(item) || originalIndex(item, idx)"
         :class="['protocols__list-item', { 'is-selected': isSelected(item) }]" @click="select(item)"
-        title="{{ (item.STT ?? item.id ?? '') + '. ' + (nameOf(item) || '') }}">
-        <div class="protocols__line">{{ (item.STT ?? item.id ?? '') + '. ' + (nameOf(item) || '') }}</div>
+        :title="displayLabel(item, idx)">
+        <div class="protocols__line">{{ displayLabel(item, idx) }}</div>
       </li>
     </ul>
     <div class="protocols__bottombar">
       <button class="icon-btn" title="Refresh protocols" @click="$emit('refresh')">🔄</button>
       <button class="icon-btn" title="Open spreadsheet for edit" @click="$emit('open-edit')">✏️</button>
       <button class="icon-btn" title="Settings" @click="$emit('open-settings')">⚙️</button>
+      <button class="icon-btn" title="Keyboard shortcuts" @click="showShortcuts = true" aria-label="Show keyboard shortcuts">⌨️</button>
     </div>
+
+    <ShortcutsDialog v-if="showShortcuts" @close="showShortcuts = false" />
   </aside>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import ShortcutsDialog from './ShortcutsDialog.vue'
 
 const props = defineProps({
   protocols: { type: Array, default: () => [] },
@@ -30,6 +34,7 @@ const props = defineProps({
 const emit = defineEmits(['select', 'refresh', 'open-edit', 'open-settings'])
 
 const q = ref('')
+const showShortcuts = ref(false)
 
 function nameOf(obj) {
   return obj && (obj['Tên'] || obj['name'] || obj['Name'] || obj['title'] || '')
@@ -65,9 +70,25 @@ function isSelected(item) {
   return id != null && String(id) === String(props.selectedId)
 }
 
+function originalIndex(item, idx) {
+  // Try to find the item's original index in the full protocols list (xlsx order)
+  const list = props.protocols || []
+  const i = list.indexOf(item)
+  return i >= 0 ? i : idx
+}
+
+function displayLabel(item, idx) {
+  const name = nameOf(item) || ''
+  const num = item && (item.STT ?? item.id ?? null)
+  const displayNum = (num != null && num !== '') ? num : (originalIndex(item, idx) + 1)
+  return String(displayNum) + '. ' + (name || '')
+}
+
 function onInput() {
   // computed filtering is instant — left for future debouncing
 }
+
+// expose showShortcuts for template
 </script>
 
 <style scoped>
