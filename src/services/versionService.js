@@ -43,6 +43,7 @@ export async function parseData(url) {
                 versions.push({
                     id: `v${versions.length + 1}`,
                     title,
+                    originalTitle: title,
                     content: rawContent, // Keep original for reference if needed
                     displayContent
                 })

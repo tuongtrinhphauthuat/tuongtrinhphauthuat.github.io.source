@@ -60,7 +60,14 @@ export function htmlToSource(input) {
         const originalEscaped = span.getAttribute('data-opt-original') || ''
         // originalEscaped was escapeHtml(displayOriginal) when generated; decode it
         const decoded = decodeHtmlEntities(originalEscaped)
-        const textNode = document.createTextNode('[' + decoded + ']')
+
+        // Check if currently hidden (selected=1)
+        // We need to check the rendered state.
+        // If class 'bracket-empty' is present, it is hidden.
+        const isHidden = span.classList.contains('bracket-empty')
+
+        const out = isHidden ? ('*' + decoded) : decoded
+        const textNode = document.createTextNode('[' + out + ']')
         span.parentNode.replaceChild(textNode, span)
       } else {
         const json = span.getAttribute('data-opt-choices') || '%5B%5D'

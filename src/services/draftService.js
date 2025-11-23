@@ -1,10 +1,10 @@
 const STORAGE_PREFIX = 'protocol_draft_';
 
 export default {
-    saveDraft(id, content, title = null) {
+    saveDraft(id, content, title = null, originalSource = null) {
         if (!id) return;
         try {
-            const data = { content, title };
+            const data = { content, title, originalSource };
             localStorage.setItem(STORAGE_PREFIX + id, JSON.stringify(data));
         } catch (e) {
             console.error('Failed to save draft', e);

@@ -90,9 +90,10 @@ export const useProtocolStore = defineStore('protocol', {
     updateVersionTitle(protocolId, oldTitle, newTitle) {
       const p = this.protocols.find(p => String(p.id) === String(protocolId) || String(p.stt) === String(protocolId))
       if (p && p.versions) {
-        const v = p.versions.find(v => v.title === oldTitle)
+        const v = p.versions.find(v => v.title === oldTitle || v.originalTitle === oldTitle || (v.id && v.title === oldTitle))
         if (v) {
           v.title = newTitle
+          v.isEdited = (v.title !== v.originalTitle)
         }
       }
     }

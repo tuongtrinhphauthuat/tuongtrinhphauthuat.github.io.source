@@ -48,7 +48,7 @@ export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
     const before = rawText.slice(lastIndex, match.index)
     out += formatInlineToHtml(before)
 
-  const inner = match[1].trim()
+    const inner = match[1].trim()
     const id = genId()
     // detect variable-definition pattern: [$name$=choices]
     // pattern: starts with $name$=...
@@ -89,17 +89,17 @@ export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
           console.error(`Multiple default '*' markers found for variable '${varName}'${info}. Using first occurrence.`)
         }
         if (starred.length >= 1) selectedIndex = starred[0]
-          const vid = genId()
+        const vid = genId()
         const vdef = { id: vid, name: varName, original: rhs, choices: choicesR, selected: selectedIndex }
-  varDefs.push(vdef)
-  varMap[varName] = vdef
-  // create a non-editable variable span at the original location so the definition position is replaced in the content
-  const dataChoices = encodeURIComponent(JSON.stringify(choicesR || []))
-  const display = vdef.choices[vdef.selected] ?? ''
-  const spanHtml = `<span class="bracket-var" contenteditable="false" data-var-id="${vid}" data-var-name="${escapeHtml(varName)}" data-var-choices="${dataChoices}">${formatInlineToHtml(display)}</span>`
-  out += spanHtml
-  lastIndex = re.lastIndex
-  continue
+        varDefs.push(vdef)
+        varMap[varName] = vdef
+        // create a non-editable variable span at the original location so the definition position is replaced in the content
+        const dataChoices = encodeURIComponent(JSON.stringify(choicesR || []))
+        const display = vdef.choices[vdef.selected] ?? ''
+        const spanHtml = `<span class="bracket-var" contenteditable="false" data-var-id="${vid}" data-var-name="${escapeHtml(varName)}" data-var-choices="${dataChoices}">${formatInlineToHtml(display)}</span>`
+        out += spanHtml
+        lastIndex = re.lastIndex
+        continue
       }
       // if already defined, fallthrough to normal option handling
     }
@@ -142,13 +142,28 @@ export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
       }
     } else {
       // single phrase -> two choices: Hiện (show phrase) or Không hiện (hide)
-      choices = [inner]
+      // Check for leading '*' indicating hidden by default
+      let phrase = inner
+      let isHidden = false
+      if (phrase.startsWith('*')) {
+        isHidden = true
+        phrase = phrase.slice(1).trim()
+      }
+      choices = [phrase]
       type = 'single'
+      // If hidden, set selected index to 1 (Assuming 0=Show, 1=Hide based on logic below)
+      // Wait, let's check applyChoiceInDom logic:
+      // if (selectedIndex === 0) { // Hiện -> show original phrase }
+      // else { // Không hiện -> show preview }
+      // So 0 is Show, 1 is Hide.
+      if (isHidden) {
+        __selectedIndexForThisOpt = 1
+      }
     }
 
     // default label shown inside the non-editable span
-  // For single-type where the user escaped slashes using '//', display a single '/' to the user.
-  const displayOriginal = type === 'single' ? inner.replace(/\/\//g, '/') : (choices[0] || inner)
+    // For single-type where the user escaped slashes using '//', display a single '/' to the user.
+    const displayOriginal = type === 'single' ? choices[0].replace(/\/\//g, '/') : (choices[0] || inner)
 
     // create option descriptor
     // detect if this single/multi option references a variable token like $name$
@@ -172,8 +187,8 @@ export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
 
     // for single choice, we keep the span but show the phrase or an invisible placeholder when 'Không' is chosen
     // use zero-width space when empty so the span occupies position but appears removed
-  // format label preserving bold/newlines (use displayOriginal for single-type to show single slash)
-  const innerHtml = formatInlineToHtml(displayOriginal)
+    // format label preserving bold/newlines (use displayOriginal for single-type to show single slash)
+    const innerHtml = formatInlineToHtml(displayOriginal)
 
     // include an attribute referencing the linked variable (if present) so DOM updates can sync
     const refAttr = varRef ? ` data-opt-ref-var="${escapeHtml(varRef)}"` : ''

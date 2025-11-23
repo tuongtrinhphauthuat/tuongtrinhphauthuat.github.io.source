@@ -11,6 +11,8 @@
           <span v-if="selectedVersion" class="title-separator"> - </span>
           <input v-if="selectedVersion" v-model="editedVersionTitle" class="title-version-input"
             :placeholder="t('versionTitle')" />
+          <span v-if="selectedVersion && selectedVersion.isEdited"
+            style="color:#f59e0b;font-weight:bold;margin-left:4px;font-size:1.2rem">*</span>
           <div class="title-icons" role="toolbar" aria-label="Protocol actions">
             <!-- Reset: double-click to reset immediately. Single click opens confirmation dialog. -->
             <button id="viewer-btn-reset" class="viewer-icon-btn reset" @click.stop.prevent="onResetClick"
@@ -166,17 +168,48 @@ function loadContent(nv, version) {
     if (id && draftService.hasDraft(id)) {
       const draft = draftService.getDraft(id)
       if (draft) {
-        raw = draft.content
-        if (draft.title !== null && draft.title !== undefined) {
-          editedVersionTitle.value = draft.title
+        // Check if original source matches current source
+        // If mismatch, it means XLSX updated, so we should discard draft
+        // Note: raw is the current XLSX content (displayContent)
+        // draft.originalSource should match raw
+
+        // We need to be careful: raw here is displayContent (stripped of title).
+        // draft.originalSource should be the same.
+
+        // If draft.originalSource is missing (legacy draft), we might want to keep it or discard.
+        // Let's assume if missing, we keep it (safe default), or maybe discard?
+        // User said: "if content downloaded from xlsx differs from original version title downloaded previously... delete local draft"
+        // Actually user said: "content downloaded from xlsx differs from original version title downloaded previously" - wait.
+        // "nội dung tải về của file xlsx nó khác với Tiêu đề version gốc được tải từ xlsx xuống trước đó"
+        // "content downloaded from xlsx differs from original version title..." - this phrasing is confusing.
+        // Likely means: "If the content from XLSX differs from the content the draft was based on".
+
+        // Let's compare draft.originalSource with raw.
+        const isOutdated = draft.originalSource && draft.originalSource !== raw
+
+        if (isOutdated) {
+          console.log('Draft is outdated (XLSX changed). Discarding draft for', id)
+          draftService.clearDraft(id)
+          // use raw (XLSX content)
+        } else {
+          raw = draft.content
+          if (draft.title !== null && draft.title !== undefined) {
+            editedVersionTitle.value = draft.title
+          }
+          // Notify parent that we are showing a draft
+          emit('edited', { id, html: null, text: null, ts: Date.now(), isDraft: true })
         }
-        // Notify parent that we are showing a draft
-        emit('edited', { id, html: null, text: null, ts: Date.now(), isDraft: true })
       }
     }
 
     const parsed = parseBracketsToHtml(raw)
+
+    // Force DOM update if editorHtml hasn't changed but DOM has
+    if (editorHtml.value === parsed.html && editor.value) {
+      editor.value.innerHTML = parsed.html
+    }
     editorHtml.value = parsed.html
+
     // initialize options with selected index default 0
     options.value = parsed.options.map((o) => ({ ...o }))
     varDefs.value = (parsed.varDefs || []).map((v) => ({ ...v }))
@@ -237,11 +270,24 @@ function doReset() {
       const id = getDraftId(props.current, props.selectedVersion)
       draftService.clearDraft(id)
     }
-    // Reset title
-    editedVersionTitle.value = props.selectedVersion ? props.selectedVersion.title : ''
+
+    // Reset title in store and local ref
+    if (props.selectedVersion && props.selectedVersion.originalTitle) {
+      const currentTitle = props.selectedVersion.title
+      const originalTitle = props.selectedVersion.originalTitle
+      if (currentTitle !== originalTitle) {
+        const id = props.current['STT'] || props.current.id
+        store.updateVersionTitle(id, currentTitle, originalTitle)
+      }
+      editedVersionTitle.value = originalTitle
+    } else {
+      editedVersionTitle.value = props.selectedVersion ? props.selectedVersion.title : ''
+    }
+
     emit('reset')
   } catch (e) {
     // fallback: no-op
+    console.error('doReset error', e)
   }
 }
 
@@ -412,7 +458,16 @@ function onInput() {
       if (props.current) {
         const id = getDraftId(props.current, props.selectedVersion)
         const source = htmlToSource(editor.value)
-        draftService.saveDraft(id, source, editedVersionTitle.value)
+
+        // Get original content from current props to save as reference
+        let originalRaw = ''
+        if (props.selectedVersion && props.selectedVersion.displayContent) {
+          originalRaw = props.selectedVersion.displayContent
+        } else {
+          originalRaw = props.current ? props.current['Nội dung'] || props.current['content'] || '' : ''
+        }
+
+        draftService.saveDraft(id, source, editedVersionTitle.value, originalRaw)
       }
 
       emit('edited', { id: getDraftId(props.current, props.selectedVersion), html, text, ts: Date.now() })
@@ -529,6 +584,7 @@ onMounted(() => {
   color: #0f172a;
   min-width: 150px;
   outline: none;
+  flex: 1;
 }
 
 .title-version-input:focus {

@@ -19,7 +19,7 @@
           <li v-for="(v, vIdx) in item.versions" :key="vIdx"
             :class="['protocols__submenu-item', { 'is-active': isVersionSelected(v) }]"
             @click.stop="selectVersion(item, v)">
-            {{ v.title }}
+            {{ v.title }} <span v-if="v.isEdited" style="color:#f59e0b;font-weight:bold">*</span>
           </li>
         </ul>
       </li>
