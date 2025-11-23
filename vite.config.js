@@ -12,7 +12,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Force everything into a single chunk named "everything" — helps produce a single bundle
-        manualChunks: () => 'everything'
+        manualChunks: () => 'everything',
+        
       }
     }
   }
