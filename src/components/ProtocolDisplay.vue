@@ -2,28 +2,31 @@
   <div class="protocols">
     <Sidebar :protocols="store.protocols" :selectedId="store.selectedId" @select="onSelect" @refresh="onRefresh"
       @open-edit="openEditLink" @open-settings="showSettings = true" />
-    <div class="protocols__main">
-      <ProtocolViewer ref="viewerRef" :current="current" :loading="store.loading" :error="store.error"
-        :draftHtml="viewerContentOverride" @copy="onCopy" @edited="onEdited" @reset="onViewerReset" @toggle-fullscreen="toggleFullscreen" />
+    <div id="display-main-container" class="protocols__main">
+      <ProtocolViewer id="display-viewer-wrapper" ref="viewerRef" :current="current" :loading="store.loading"
+        :error="store.error" :draftHtml="viewerContentOverride" @copy="onCopy" @edited="onEdited" @reset="onViewerReset"
+        @toggle-fullscreen="toggleFullscreen" />
 
       <LoadingProgress v-if="store.loading" />
 
       <!-- version popover removed -->
 
       <!-- bottom menu moved here -->
-      <div class="protocols__bottombar">
-        <button class="icon-btn" @click="doCopy" title="Copy (Ctrl+C)">Copy</button>
-        <button class="icon-btn" @click="copySource" title="Copy source (Ctrl+Alt+C)">Copy source</button>
+      <div id="display-bottom-bar" class="display__bottombar">
+        <button id="display-btn-copy" class="icon-btn" @click="doCopy" :title="t('copy')">{{ t('copy') }}</button>
+        <button id="display-btn-copy-source" class="icon-btn" @click="copySource" :title="t('copySource')">{{
+          t('copySource') }}</button>
         <!-- manual save/version/autosave UI removed -->
         <!-- Fullscreen moved into the viewer title-icons to reduce accidental clicks -->
-        <div style="margin-left:auto;color:#64748b">{{ versionsStatus }}</div>
+        <div id="display-status-text" style="margin-left:auto;color:#64748b">{{ versionsStatus }}</div>
       </div>
 
       <!-- versions modal removed -->
     </div>
 
     <!-- settings dialog component -->
-    <SettingsDialog v-if="showSettings" :source="store.sourceUrl" :edit="store.editUrl" @save="onSettingsSave" @close="showSettings = false" />
+    <SettingsDialog v-if="showSettings" :source="store.sourceUrl" :edit="store.editUrl" @save="onSettingsSave"
+      @close="showSettings = false" />
 
     <Toast />
   </div>
@@ -39,6 +42,9 @@ import LoadingProgress from './LoadingProgress.vue'
 import Toast from './Toast.vue'
 import { useToastStore } from '../stores/toastStore'
 import SettingsDialog from './SettingsDialog.vue'
+import languageService from '../services/languageService'
+
+const { t } = languageService
 
 const store = useProtocolStore()
 const viewerRef = ref(null)
@@ -129,15 +135,15 @@ async function copySource() {
       ta.value = src
       document.body.appendChild(ta)
       ta.select()
-      try { document.execCommand('copy') } catch (e) {}
+      try { document.execCommand('copy') } catch (e) { }
       ta.remove()
     }
-    versionsStatus.value = 'Source copied'
-    toastStore.addToast('Protocol source copied to clipboard', 'success')
+    versionsStatus.value = t('sourceCopied')
+    toastStore.addToast(t('sourceCopiedToast'), 'success')
   } catch (e) {
     console.error('copySource failed', e)
-    versionsStatus.value = 'Copy failed'
-    toastStore.addToast('Copy failed', 'error')
+    versionsStatus.value = t('copyError')
+    toastStore.addToast(t('copyError'), 'error')
   }
 }
 
@@ -150,7 +156,7 @@ function onViewerReset() {
   } catch (e) {
     console.error('viewer reset failed', e)
   }
-  versionsStatus.value = 'Reset to default'
+  versionsStatus.value = t('resetToDefault')
 }
 
 const current = computed(() =>
@@ -163,7 +169,7 @@ function onSave(updated) {
 
 async function onCopy(text) {
   // The viewer already writes to clipboard; here we provide UI feedback.
-  toastStore.addToast('Copied protocol to clipboard', 'success')
+  toastStore.addToast(t('protocolCopiedToast'), 'success')
   console.log('Copied text length:', (text || '').length)
 }
 
@@ -176,7 +182,7 @@ function onEdited(payload) {
   // Keep latest draft in memory but do not persist or autosave
   if (!payload || !payload.id) return
   draftHtmlForViewer.value = payload.html
-  versionsStatus.value = `(unsaved draft) ${payload.id}`
+  versionsStatus.value = `${t('unsavedDraft')} ${payload.id}`
 }
 
 watch(() => store.selectedId, () => {
@@ -362,7 +368,7 @@ function onSettingsSave(payload) {
   max-height: none
 }
 
-.protocols__bottombar {
+.display__bottombar {
   display: flex;
   gap: 10px;
   padding: 12px 16px 16px 16px;
@@ -390,8 +396,7 @@ function onSettingsSave(payload) {
   background: rgba(2, 6, 23, .5);
   display: flex;
   align-items: center;
-  justify-content: center
-  ;
+  justify-content: center;
   z-index: 100002;
 }
 

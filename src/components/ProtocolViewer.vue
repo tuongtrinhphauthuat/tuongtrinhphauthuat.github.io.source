@@ -1,35 +1,49 @@
 <template>
   <div class="protocols__content">
 
-    <div class="protocols__editor">
-      <div v-if="!current" class="protocols__empty">Select a protocol to view or edit</div>
+    <div id="viewer-editor-container" class="protocols__editor">
+      <div v-if="!current" class="protocols__empty">{{ t('selectProtocol') }}</div>
 
       <div v-else class="protocols__editor-inner">
-        <h2 class="protocols__title-selected">
+        <h2 id="viewer-title" class="protocols__title-selected">
           <span class="title-text">{{ nameOf(current) }}</span>
           <div class="title-icons" role="toolbar" aria-label="Protocol actions">
             <!-- Reset: double-click to reset immediately. Single click opens confirmation dialog. -->
-            <button class="viewer-icon-btn reset" @click.stop.prevent="onResetClick" @dblclick.stop.prevent="doReset"
-              title="Reset to default — double-click to reset immediately; single click opens confirmation">⟲</button>
+            <button id="viewer-btn-reset" class="viewer-icon-btn reset" @click.stop.prevent="onResetClick"
+              @dblclick.stop.prevent="doReset" :title="t('resetTooltip')">⟲</button>
 
             <!-- spacer to separate reset from fullscreen to avoid accidental clicks -->
             <div style="width:12px"></div>
 
             <!-- Fullscreen: emit event to parent to toggle fullscreen (Ctrl+Shift+F) -->
-            <button class="viewer-icon-btn" @click.stop.prevent="$emit('toggle-fullscreen')" title="Toggle full screen (Ctrl+Shift+F)">⤢</button>
+            <button id="viewer-btn-fullscreen" class="viewer-icon-btn" @click.stop.prevent="$emit('toggle-fullscreen')"
+              :title="t('toggleFullscreen')">⤢</button>
+
+            <!-- Language Switcher -->
+            <div class="lang-switcher" @mouseenter="showLangDropdown = true" @mouseleave="showLangDropdown = false">
+              <button id="viewer-lang-switch" class="viewer-icon-btn" :title="t('language')">
+                {{ currentLang === 'vi' ? '🇻🇳' : '🇺🇸' }}
+              </button>
+              <div id="viewer-lang-dropdown" v-if="showLangDropdown" class="lang-dropdown">
+                <div class="lang-option" @click="setLanguage('vi')">🇻🇳 Tiếng Việt</div>
+                <div class="lang-option" @click="setLanguage('en')">🇺🇸 English</div>
+              </div>
+            </div>
 
             <!-- Confirmation dialog (shown when user single-clicks reset) -->
-            <ConfirmDialog v-if="showConfirm" :title="'Confirm reset'" :message="'Reset this protocol to its original default content? This cannot be undone.'"
-              confirmText="Reset" cancelText="Cancel" @confirm="onConfirmReset" @cancel="showConfirm = false" />
+            <ConfirmDialog v-if="showConfirm" :title="t('confirmResetTitle')" :message="t('confirmResetMessage')"
+              :confirmText="t('reset')" :cancelText="t('cancel')" @confirm="onConfirmReset"
+              @cancel="showConfirm = false" />
           </div>
         </h2>
         <!-- variable selectors removed — variable pills are clickable inline now -->
 
         <div class="protocols__editor-area">
-          <div ref="editor" class="protocols__editor-content" contenteditable="true" v-html="editorHtml"
-            @input="onInput" @click="onEditorClick"></div>
+          <div id="viewer-content-editable" ref="editor" class="protocols__editor-content" contenteditable="true"
+            v-html="editorHtml" @input="onInput" @click="onEditorClick"></div>
           <!-- inline popup for bracket options -->
-          <div v-if="popupVisible" class="bracket-popup" :style="{ left: popupX + 'px', top: popupY + 'px' }">
+          <div id="viewer-bracket-popup" v-if="popupVisible" class="bracket-popup"
+            :style="{ left: popupX + 'px', top: popupY + 'px' }">
             <ul class="bracket-list">
               <li v-for="(c, ci) in popupItems" :key="ci" @click.stop.prevent="popupChoose(ci)">
                 {{ c }}
@@ -46,6 +60,11 @@
 import { ref, watch, onMounted, computed, nextTick } from 'vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { parseBracketsToHtml, applyChoiceInDom, applyVarChoiceInDom, replaceVarTokensInDom, getPlainTextFromContainer } from '../services/bracketService'
+import { htmlToSource } from '../services/bracketReverseService'
+import draftService from '../services/draftService'
+import languageService from '../services/languageService'
+
+const { t, currentLang, setLanguage } = languageService
 
 const props = defineProps({
   current: { type: Object, default: null },
@@ -69,6 +88,7 @@ const popupType = ref(null) // 'opt' | 'var' or null
 const activeVarName = ref(null)
 const saveTimer = ref(null)
 const showConfirm = ref(false)
+const showLangDropdown = ref(false)
 
 watch(
   () => props.current,
@@ -83,7 +103,19 @@ function loadContent(nv) {
   if (props.draftHtml) {
     editorHtml.value = props.draftHtml
   } else {
-    const raw = nv ? nv['Nội dung'] || nv['content'] || '' : ''
+    const id = nv ? (nv['STT'] || nv.id) : null
+    let raw = nv ? nv['Nội dung'] || nv['content'] || '' : ''
+
+    // Check for saved draft
+    if (id && draftService.hasDraft(id)) {
+      const draft = draftService.getDraft(id)
+      if (draft) {
+        raw = draft
+        // Notify parent that we are showing a draft
+        emit('edited', { id, html: null, text: null, ts: Date.now(), isDraft: true })
+      }
+    }
+
     const parsed = parseBracketsToHtml(raw)
     editorHtml.value = parsed.html
     // initialize options with selected index default 0
@@ -105,7 +137,7 @@ function loadContent(nv) {
       // ensure editor has the click handler attached so bracket clicks open the popup
       if (editor.value && !editor.value._bracketClickAttached) {
         editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
-        try { editor.value._bracketClickAttached = true } catch (e) {}
+        try { editor.value._bracketClickAttached = true } catch (e) { }
       }
     } catch (e) {
       // ignore
@@ -128,7 +160,7 @@ watch(
       // ensure editor has the click handler attached so bracket clicks open the popup
       if (editor.value && !editor.value._bracketClickAttached) {
         editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
-        try { editor.value._bracketClickAttached = true } catch (e) {}
+        try { editor.value._bracketClickAttached = true } catch (e) { }
       }
     })
   },
@@ -141,6 +173,11 @@ function nameOf(obj) {
 
 function doReset() {
   try {
+    // Clear draft
+    if (props.current) {
+      const id = props.current['STT'] || props.current.id
+      draftService.clearDraft(id)
+    }
     emit('reset')
   } catch (e) {
     // fallback: no-op
@@ -160,6 +197,7 @@ function onConfirmReset() {
 function onOptionChange(opt) {
   // apply choice in DOM (for backward compatibility if used)
   applyChoiceInDom(editor.value, opt.id, opt.selected)
+  onInput() // Trigger save
 }
 
 function chooseVar(varName, index) {
@@ -192,6 +230,7 @@ function applyAndClose() {
   popupVisible.value = false
   activeOptId.value = null
   popupType.value = null
+  onInput() // Trigger save
 }
 
 function chooseAndClose(index) {
@@ -208,6 +247,7 @@ function chooseAndClose(index) {
   popupVisible.value = false
   activeOptId.value = null
   popupType.value = null
+  onInput() // Trigger save
 }
 
 function openPopupForVar(varName, x, y) {
@@ -232,6 +272,7 @@ function chooseVarFromPopup(index) {
   popupVisible.value = false
   activeVarName.value = null
   popupType.value = null
+  onInput() // Trigger save
 }
 
 // choose from the topmenu inline list (no dropdown) — apply immediately
@@ -275,7 +316,7 @@ const popupItems = computed(() => {
     // - if currently hidden (1) => 'Không hiện' -> show only 'Hiện' to allow showing
     if (o.type === 'single') {
       const sel = Number(o.selected || 0)
-      return sel === 0 ? ['Không hiện'] : ['Hiện']
+      return sel === 0 ? [t('hide')] : [t('show')]
     }
     return o.choices || []
   }
@@ -305,6 +346,14 @@ function onInput() {
     try {
       const html = editor.value ? editor.value.innerHTML : editorHtml.value
       const text = getPlainTextFromContainer(editor.value || { innerText: '' })
+
+      // Save draft
+      if (props.current) {
+        const id = props.current['STT'] || props.current.id
+        const source = htmlToSource(editor.value)
+        draftService.saveDraft(id, source)
+      }
+
       emit('edited', { id: props.current ? (props.current['STT'] || props.current.id) : null, html, text, ts: Date.now() })
     } catch (err) {
       console.error('emit edited failed', err)
@@ -336,31 +385,31 @@ defineExpose({
     setTimeout(() => {
       if (editor.value && !editor.value._bracketClickAttached) {
         editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
-        try { editor.value._bracketClickAttached = true } catch (e) {}
+        try { editor.value._bracketClickAttached = true } catch (e) { }
       }
     }, 40)
   }
 })
 
-  // ensure initial spans are non-editable after mount
-  onMounted(() => {
-    setTimeout(() => onInput(), 50)
-    // attach click listener to editor for bracket clicks if not already attached
-    if (editor.value && !editor.value._bracketClickAttached) {
-      editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
-      try { editor.value._bracketClickAttached = true } catch (e) {}
-    }
-    // close popup on outside click; treat bracket-var as inside-target as well
-    // normalize event target to handle text nodes (clicks on text nodes inside spans)
-    document.addEventListener('click', (ev) => {
-      let t = ev.target
-      if (t && t.nodeType === Node.TEXT_NODE) t = t.parentElement
-      const withinOpt = t && t.closest ? t.closest('.bracket-opt') : null
-      const withinVar = t && t.closest ? t.closest('.bracket-var') : null
-      const inPopup = t && t.closest ? t.closest('.bracket-popup') : null
-      if (!withinOpt && !withinVar && !inPopup) popupVisible.value = false
-    })
+// ensure initial spans are non-editable after mount
+onMounted(() => {
+  setTimeout(() => onInput(), 50)
+  // attach click listener to editor for bracket clicks if not already attached
+  if (editor.value && !editor.value._bracketClickAttached) {
+    editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
+    try { editor.value._bracketClickAttached = true } catch (e) { }
+  }
+  // close popup on outside click; treat bracket-var as inside-target as well
+  // normalize event target to handle text nodes (clicks on text nodes inside spans)
+  document.addEventListener('click', (ev) => {
+    let t = ev.target
+    if (t && t.nodeType === Node.TEXT_NODE) t = t.parentElement
+    const withinOpt = t && t.closest ? t.closest('.bracket-opt') : null
+    const withinVar = t && t.closest ? t.closest('.bracket-var') : null
+    const inPopup = t && t.closest ? t.closest('.bracket-popup') : null
+    if (!withinOpt && !withinVar && !inPopup) popupVisible.value = false
   })
+})
 </script>
 
 <style scoped>
@@ -394,11 +443,13 @@ defineExpose({
   align-items: center;
   gap: 8px;
 }
+
 .title-icons {
   margin-left: auto;
   display: flex;
   gap: 10px;
 }
+
 .viewer-icon-btn {
   background: #fff;
   border: 1px solid #e3e8ef;
@@ -412,6 +463,52 @@ defineExpose({
   background: #fff7f7;
   border-color: #fecaca;
   color: #b91c1c;
+}
+
+.lang-switcher {
+  position: relative;
+  display: inline-block;
+}
+
+.lang-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e6eef8;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  min-width: 120px;
+  overflow: visible;
+  /* Allow pseudo-element to be outside */
+  margin-top: 4px;
+}
+
+/* Invisible bridge to prevent mouseleave when moving from button to dropdown */
+.lang-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background: transparent;
+}
+
+.lang-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lang-option:hover {
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 .protocols__editor-area {

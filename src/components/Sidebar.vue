@@ -1,22 +1,26 @@
 <template>
-  <aside class="protocols__sidebar">
+  <aside id="sidebar-container" class="protocols__sidebar">
     <div class="protocols__search">
-      <input class="protocols__input" v-model="q" placeholder="Tìm kiếm (Dấu phẩy = OR, e.g. giáp, thùy)"
+      <input id="sidebar-search-input" class="protocols__input" v-model="q" :placeholder="t('searchPlaceholder')"
         @input="onInput" />
     </div>
 
-    <ul class="protocols__list">
+    <ul id="sidebar-list" class="protocols__list">
       <li v-for="(item, idx) in filtered" :key="idOf(item) || nameOf(item) || originalIndex(item, idx)"
-        :class="['protocols__list-item', { 'is-selected': isSelected(item) }]" @click="select(item)"
-        :title="displayLabel(item, idx)">
+        :class="['protocols__list-item', 'sidebar-list-item', { 'is-selected': isSelected(item) }]"
+        @click="select(item)" :title="displayLabel(item, idx)">
         <div class="protocols__line">{{ displayLabel(item, idx) }}</div>
       </li>
     </ul>
-    <div class="protocols__bottombar">
-      <button class="icon-btn" title="Refresh protocols" @click="$emit('refresh')">🔄</button>
-      <button class="icon-btn" title="Open spreadsheet for edit" @click="$emit('open-edit')">✏️</button>
-      <button class="icon-btn" title="Settings" @click="$emit('open-settings')">⚙️</button>
-      <button class="icon-btn" title="Keyboard shortcuts" @click="showShortcuts = true" aria-label="Show keyboard shortcuts">⌨️</button>
+    <div id="sidebar-bottom-bar" class="sidebar__bottombar">
+      <button id="sidebar-btn-refresh" class="icon-btn" :title="t('refreshProtocols')"
+        @click="$emit('refresh')">🔄</button>
+      <button id="sidebar-btn-edit" class="icon-btn" :title="t('openSpreadsheet')"
+        @click="$emit('open-edit')">✏️</button>
+      <button id="sidebar-btn-settings" class="icon-btn" :title="t('settings')"
+        @click="$emit('open-settings')">⚙️</button>
+      <button id="sidebar-btn-shortcuts" class="icon-btn" :title="t('shortcuts')" @click="showShortcuts = true"
+        :aria-label="t('shortcuts')">⌨️</button>
     </div>
 
     <ShortcutsDialog v-if="showShortcuts" @close="showShortcuts = false" />
@@ -26,6 +30,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import ShortcutsDialog from './ShortcutsDialog.vue'
+import languageService from '../services/languageService'
+
+const { t } = languageService
 
 const props = defineProps({
   protocols: { type: Array, default: () => [] },
@@ -137,7 +144,7 @@ function onInput() {
   text-overflow: ellipsis
 }
 
-.protocols__bottombar {
+.sidebar__bottombar {
   display: flex;
   gap: 10px;
   padding-top: 8px;

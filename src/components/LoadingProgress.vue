@@ -2,14 +2,17 @@
   <div class="loading-overlay" role="status" aria-live="polite">
     <div class="loading-box">
       <div class="spinner" aria-hidden="true"></div>
-      <div class="loading-text">{{ message }}</div>
+      <div class="loading-text">{{ message || t('loadingMessage') }}</div>
     </div>
   </div>
 </template>
 
 <script setup>
+import languageService from '../services/languageService'
+
+const { t } = languageService
 const props = defineProps({
-  message: { type: String, default: 'Loading protocols and parsing content…' }
+  message: { type: String, default: null }
 })
 </script>
 
@@ -20,9 +23,10 @@ const props = defineProps({
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255, 255, 255, 0.8);
   z-index: 100000;
 }
+
 .loading-box {
   display: flex;
   gap: 14px;
@@ -30,13 +34,15 @@ const props = defineProps({
   background: #fff;
   padding: 14px 18px;
   border-radius: 10px;
-  box-shadow: 0 8px 30px rgba(2,6,23,0.08);
+  box-shadow: 0 8px 30px rgba(2, 6, 23, 0.08);
 }
+
 .loading-text {
   font-size: 16px;
   color: #0f172a;
   font-weight: 600;
 }
+
 .spinner {
   width: 30px;
   height: 30px;
@@ -45,5 +51,10 @@ const props = defineProps({
   border-top-color: #7c3aed;
   animation: spin 0.9s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>
