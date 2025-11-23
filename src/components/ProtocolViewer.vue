@@ -204,6 +204,8 @@ function loadContent(nv, version) {
 
     const parsed = parseBracketsToHtml(raw)
 
+    console.log('[ProtocolViewer] parsed.html first 500 chars:', parsed.html.substring(0, 500))
+
     // Force DOM update if editorHtml hasn't changed but DOM has
     if (editorHtml.value === parsed.html && editor.value) {
       editor.value.innerHTML = parsed.html
@@ -216,7 +218,10 @@ function loadContent(nv, version) {
   }
   // after DOM renders, apply initial choices to ensure spans contain labels
   setTimeout(() => {
-    options.value.forEach((o) => applyChoiceInDom(editor.value, o.id, o.selected))
+    options.value.forEach((o) => {
+      const res = applyChoiceInDom(editor.value, o.id, o.selected)
+      if (res) mergeOptions(res.options, res.varDefs)
+    })
     varDefs.value.forEach((v) => applyVarChoiceInDom(editor.value, v.name, v.selected, v.choices))
     // ensure any remaining literal $name$ tokens in text nodes are replaced by variable spans
     replaceVarTokensInDom(editor.value, varDefs.value)
@@ -301,9 +306,27 @@ function onConfirmReset() {
   doReset()
 }
 
+function mergeOptions(newOpts, newVars) {
+  if (newOpts && newOpts.length) {
+    newOpts.forEach(o => {
+      if (!options.value.find(x => x.id === o.id)) {
+        options.value.push(o)
+      }
+    })
+  }
+  if (newVars && newVars.length) {
+    newVars.forEach(v => {
+      if (!varDefs.value.find(x => x.id === v.id)) {
+        varDefs.value.push(v)
+      }
+    })
+  }
+}
+
 function onOptionChange(opt) {
   // apply choice in DOM (for backward compatibility if used)
-  applyChoiceInDom(editor.value, opt.id, opt.selected)
+  const res = applyChoiceInDom(editor.value, opt.id, opt.selected)
+  if (res) mergeOptions(res.options, res.varDefs)
   onInput() // Trigger save
 }
 
@@ -333,7 +356,8 @@ function applyAndClose() {
   const opt = options.value.find((o) => o.id === activeOptId.value)
   if (!opt) return
   opt.selected = Number(popupSelectedIndex.value)
-  applyChoiceInDom(editor.value, opt.id, opt.selected)
+  const res = applyChoiceInDom(editor.value, opt.id, opt.selected)
+  if (res) mergeOptions(res.options, res.varDefs)
   popupVisible.value = false
   activeOptId.value = null
   popupType.value = null
@@ -350,7 +374,8 @@ function chooseAndClose(index) {
   } else {
     opt.selected = Number(index)
   }
-  applyChoiceInDom(editor.value, opt.id, opt.selected)
+  const res = applyChoiceInDom(editor.value, opt.id, opt.selected)
+  if (res) mergeOptions(res.options, res.varDefs)
   popupVisible.value = false
   activeOptId.value = null
   popupType.value = null

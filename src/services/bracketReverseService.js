@@ -52,7 +52,8 @@ export function htmlToSource(input) {
   }
 
   // replace bracket-opt spans with their bracket text
-  const opts = Array.from(root.querySelectorAll('.bracket-opt'))
+  // Process bottom-up (deepest first) to handle nested brackets correctly
+  const opts = Array.from(root.querySelectorAll('.bracket-opt')).reverse()
   opts.forEach((span) => {
     try {
       const type = span.getAttribute('data-opt-type') || ''

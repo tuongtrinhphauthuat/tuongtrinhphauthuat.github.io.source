@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Bracket Default Display</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .test-case {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+    .test-input {
+      font-family: monospace;
+      background: #fff;
+      padding: 10px;
+      border-left: 3px solid #4CAF50;
+      margin: 10px 0;
+    }
+    .test-output {
+      padding: 10px;
+      margin: 10px 0;
+      background: #fff;
+      border-left: 3px solid #2196F3;
+    }
+    .bracket-opt {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(90deg, #fff7cc, #fde68a);
+      border: 1px solid #f0c57a;
+      padding: 4px 10px;
+      border-radius: 8px;
+      margin: 0 4px;
+      font-weight: 700;
+      color: #091427;
+    }
+    .expected {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+    .label {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Test Bracket Default Display</h1>
+  <p>Testing that multi-option brackets display the default value correctly on initial load.</p>
+
+  <div id="test-results"></div>
+
+  <script type="module">
+    // Import the service (we'll use a simplified inline version for testing)
+    // In practice, you'd import from: import { parseBracketsToHtml } from './src/services/bracketService.js'
+    
+    // For this test, we'll load the actual service
+    import { parseBracketsToHtml } from './src/services/bracketService.js';
+
+    const testCases = [
+      {
+        name: "Multi-option with * on second choice",
+        input: "[Cắt toàn bộ tuyến giáp hai bên/*Cắt một thùy Trái và eo tuyến giáp/Ngừng phẫu thuật và chờ kết quả giải phẫu bệnh thường]",
+        expected: "Cắt một thùy Trái và eo tuyến giáp"
+      },
+      {
+        name: "Multi-option without * (should default to first)",
+        input: "[Option A/Option B/Option C]",
+        expected: "Option A"
+      },
+      {
+        name: "Multi-option with * on first choice",
+        input: "[*First Option/Second Option/Third Option]",
+        expected: "First Option"
+      },
+      {
+        name: "Multi-option with * on last choice",
+        input: "[Option 1/Option 2/Option 3*]",
+        expected: "Option 3"
+      },
+      {
+        name: "Single option (no slash)",
+        input: "[Single Choice]",
+        expected: "Single Choice"
+      }
+    ];
+
+    const resultsDiv = document.getElementById('test-results');
+
+    testCases.forEach((testCase, index) => {
+      const parsed = parseBracketsToHtml(testCase.input);
+      
+      // Extract the text content from the HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = parsed.html;
+      const actualOutput = tempDiv.textContent.trim();
+      
+      const passed = actualOutput === testCase.expected;
+      
+      const testDiv = document.createElement('div');
+      testDiv.className = 'test-case';
+      testDiv.innerHTML = `
+        <h3>Test ${index + 1}: ${testCase.name}</h3>
+        <div class="label">Input:</div>
+        <div class="test-input">${testCase.input}</div>
+        <div class="label">Expected:</div>
+        <div class="expected">${testCase.expected}</div>
+        <div class="label">Actual Output:</div>
+        <div class="test-output">${parsed.html}</div>
+        <div class="label">Text Content:</div>
+        <div>${actualOutput}</div>
+        <div style="margin-top: 10px; font-weight: bold; color: ${passed ? '#4CAF50' : '#f44336'}">
+          ${passed ? '✓ PASSED' : '✗ FAILED'}
+        </div>
+      `;
+      
+      resultsDiv.appendChild(testDiv);
+    });
+  </script>
+</body>
+</html>
