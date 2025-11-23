@@ -6,7 +6,11 @@
 
       <div v-else class="protocols__editor-inner">
         <h2 id="viewer-title" class="protocols__title-selected">
-          <span class="title-text">{{ nameOf(current) }}</span>
+
+          <span class="title-text-main">{{ nameOf(current) }}</span>
+          <span v-if="selectedVersion" class="title-separator"> - </span>
+          <input v-if="selectedVersion" v-model="editedVersionTitle" class="title-version-input"
+            :placeholder="t('versionTitle')" />
           <div class="title-icons" role="toolbar" aria-label="Protocol actions">
             <!-- Reset: double-click to reset immediately. Single click opens confirmation dialog. -->
             <button id="viewer-btn-reset" class="viewer-icon-btn reset" @click.stop.prevent="onResetClick"
@@ -64,10 +68,14 @@ import { htmlToSource } from '../services/bracketReverseService'
 import draftService from '../services/draftService'
 import languageService from '../services/languageService'
 
+import { useProtocolStore } from '../stores/protocolStore'
+
 const { t, currentLang, setLanguage } = languageService
 
+const store = useProtocolStore()
 const props = defineProps({
   current: { type: Object, default: null },
+  selectedVersion: { type: Object, default: null },
   loading: { type: Boolean, default: false },
   error: { type: [String, Boolean, null], default: null },
   // optional draftHtml allows the parent to ask the viewer to render a saved draft/html snapshot
@@ -89,28 +97,79 @@ const activeVarName = ref(null)
 const saveTimer = ref(null)
 const showConfirm = ref(false)
 const showLangDropdown = ref(false)
+const editedVersionTitle = ref('')
 
 watch(
-  () => props.current,
-  (nv) => {
-    loadContent(nv)
+  [() => props.current, () => props.selectedVersion],
+  ([newCurrent, newVersion]) => {
+    // Initialize title from version or empty
+    editedVersionTitle.value = newVersion ? newVersion.title : ''
+    loadContent(newCurrent, newVersion)
   },
   { immediate: true }
 )
 
-function loadContent(nv) {
+// Watch for title changes to save draft and update store
+watch(editedVersionTitle, (newVal, oldVal) => {
+  if (props.current && props.selectedVersion) {
+    // Update store immediately for sidebar reactivity
+    // We need to pass the *previous* title to find the version if we didn't track it, 
+    // but here we are mutating the title.
+    // Actually, if we mutate the title in the store, the selectedVersion prop (which is a ref to the store object) might update?
+    // Let's check: props.selectedVersion is passed from store.selectedVersion.
+
+    // If we update the store, the prop might change.
+    // But we need to be careful not to lose track of which version we are editing if the title is the key.
+    // The store uses the title to find the version in `updateVersionTitle`.
+
+    // Better approach: The store action `updateVersionTitle` updates the title.
+    // We need to know the *original* title or the *current* title in the store before update.
+    // Since `editedVersionTitle` is v-model, it updates on every keystroke.
+    // `props.selectedVersion.title` is the source of truth.
+
+    if (props.selectedVersion.title !== newVal) {
+      const id = props.current['STT'] || props.current.id
+      store.updateVersionTitle(id, props.selectedVersion.title, newVal)
+    }
+  }
+  onInput()
+})
+
+function getDraftId(protocol, version) {
+  if (!protocol) return null
+  const pId = protocol['STT'] || protocol.id
+  if (version && version.id) {
+    return `${pId}_${version.id}`
+  }
+  // Fallback for backward compatibility or if id missing (shouldn't happen with new service)
+  if (version && version.title) {
+    return `${pId}_${version.title}`
+  }
+  return pId
+}
+
+function loadContent(nv, version) {
   // if a draftHtml is provided by parent, that takes precedence
   if (props.draftHtml) {
     editorHtml.value = props.draftHtml
   } else {
-    const id = nv ? (nv['STT'] || nv.id) : null
-    let raw = nv ? nv['Nội dung'] || nv['content'] || '' : ''
+    const id = getDraftId(nv, version)
+    let raw = ''
+
+    if (version && version.displayContent) {
+      raw = version.displayContent
+    } else {
+      raw = nv ? nv['Nội dung'] || nv['content'] || '' : ''
+    }
 
     // Check for saved draft
     if (id && draftService.hasDraft(id)) {
       const draft = draftService.getDraft(id)
       if (draft) {
-        raw = draft
+        raw = draft.content
+        if (draft.title !== null && draft.title !== undefined) {
+          editedVersionTitle.value = draft.title
+        }
         // Notify parent that we are showing a draft
         emit('edited', { id, html: null, text: null, ts: Date.now(), isDraft: true })
       }
@@ -175,9 +234,11 @@ function doReset() {
   try {
     // Clear draft
     if (props.current) {
-      const id = props.current['STT'] || props.current.id
+      const id = getDraftId(props.current, props.selectedVersion)
       draftService.clearDraft(id)
     }
+    // Reset title
+    editedVersionTitle.value = props.selectedVersion ? props.selectedVersion.title : ''
     emit('reset')
   } catch (e) {
     // fallback: no-op
@@ -349,12 +410,12 @@ function onInput() {
 
       // Save draft
       if (props.current) {
-        const id = props.current['STT'] || props.current.id
+        const id = getDraftId(props.current, props.selectedVersion)
         const source = htmlToSource(editor.value)
-        draftService.saveDraft(id, source)
+        draftService.saveDraft(id, source, editedVersionTitle.value)
       }
 
-      emit('edited', { id: props.current ? (props.current['STT'] || props.current.id) : null, html, text, ts: Date.now() })
+      emit('edited', { id: getDraftId(props.current, props.selectedVersion), html, text, ts: Date.now() })
     } catch (err) {
       console.error('emit edited failed', err)
     }
@@ -376,11 +437,12 @@ async function onCopy() {
 defineExpose({
   copyEditor: onCopy,
   getEditorHtml: () => (editor.value ? editor.value.innerHTML : editorHtml.value),
+  getEditedTitle: () => editedVersionTitle.value,
   reset: async () => {
     // hide any open popup and reload content after DOM stabilizes
     popupVisible.value = false
     await nextTick()
-    loadContent(props.current)
+    loadContent(props.current, props.selectedVersion)
     // ensure click handler attached after reload
     setTimeout(() => {
       if (editor.value && !editor.value._bracketClickAttached) {
@@ -442,6 +504,36 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  /* allow wrapping on small screens */
+}
+
+.title-text-main {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.title-separator {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.title-version-input {
+  background: #fcfcfc;
+  /* Light yellow */
+  border: 1px solid #fde047;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #0f172a;
+  min-width: 150px;
+  outline: none;
+}
+
+.title-version-input:focus {
+  border-color: #eab308;
+  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
 }
 
 .title-icons {

@@ -7,9 +7,21 @@
 
     <ul id="sidebar-list" class="protocols__list">
       <li v-for="(item, idx) in filtered" :key="idOf(item) || nameOf(item) || originalIndex(item, idx)"
-        :class="['protocols__list-item', 'sidebar-list-item', { 'is-selected': isSelected(item) }]"
-        @click="select(item)" :title="displayLabel(item, idx)">
-        <div class="protocols__line">{{ displayLabel(item, idx) }}</div>
+        class="protocols__list-item sidebar-list-item">
+        <div :class="['protocols__item-header', { 'is-selected': isSelected(item) }]" @click="select(item)"
+          :title="displayLabel(item, idx)">
+          <div class="protocols__line">{{ displayLabel(item, idx) }}</div>
+        </div>
+
+        <!-- Version Submenu -->
+        <ul v-if="(isSelected(item) || (q && q.length > 0)) && item.versions && item.versions.length > 1"
+          class="protocols__submenu">
+          <li v-for="(v, vIdx) in item.versions" :key="vIdx"
+            :class="['protocols__submenu-item', { 'is-active': isVersionSelected(v) }]"
+            @click.stop="selectVersion(item, v)">
+            {{ v.title }}
+          </li>
+        </ul>
       </li>
     </ul>
     <div id="sidebar-bottom-bar" class="sidebar__bottombar">
@@ -36,7 +48,8 @@ const { t } = languageService
 
 const props = defineProps({
   protocols: { type: Array, default: () => [] },
-  selectedId: { type: [String, Number], default: null }
+  selectedId: { type: [String, Number], default: null },
+  selectedVersion: { type: Object, default: null }
 })
 const emit = defineEmits(['select', 'refresh', 'open-edit', 'open-settings'])
 
@@ -62,19 +75,45 @@ const filtered = computed(() => {
   const list = props.protocols || []
   if (!tokens.value.length) return list
   const low = tokens.value.map((t) => t.toLowerCase())
-  return list.filter((p) => {
+
+  return list.map(p => {
+    // Check protocol name
     const name = (nameOf(p) || '').toLowerCase()
-    return low.some((t) => name.includes(t))
-  })
+    const nameMatch = low.every((t) => name.includes(t))
+
+    // Check versions
+    const matchingVersions = (p.versions || []).filter(v => {
+      const vTitle = (v.title || '').toLowerCase()
+      // Optional: search content too if desired, but sticking to title for now as per usual UI patterns
+      return low.every(t => vTitle.includes(t))
+    })
+
+    if (nameMatch) return p
+    if (matchingVersions.length) {
+      // Return a copy with only matching versions to highlight them
+      return { ...p, versions: matchingVersions }
+    }
+    return null
+  }).filter(Boolean)
 })
 
 function select(item) {
-  emit('select', item)
+  // If multiple versions, select the first one by default or just the protocol?
+  // Store handles default version if null.
+  emit('select', item, null)
+}
+
+function selectVersion(item, version) {
+  emit('select', item, version)
 }
 
 function isSelected(item) {
   const id = idOf(item)
   return id != null && String(id) === String(props.selectedId)
+}
+
+function isVersionSelected(version) {
+  return props.selectedVersion && version && props.selectedVersion.title === version.title
 }
 
 function originalIndex(item, idx) {
@@ -100,7 +139,6 @@ function onInput() {
 
 <style scoped>
 /* small local tweaks; main visual styles are kept in ProtocolDisplay.vue */
-/* small local tweaks; main visual styles are kept in ProtocolDisplay.vue */
 .protocols__search {
   margin-bottom: 12px;
   flex-shrink: 0
@@ -124,15 +162,19 @@ function onInput() {
 }
 
 .protocols__list-item {
-  padding: 8px 10px;
-  border-radius: 6px;
+  /* removed padding from here to separate header from submenu */
   margin-bottom: 6px;
-  cursor: pointer;
   background: transparent;
   text-align: left
 }
 
-.protocols__list-item.is-selected {
+.protocols__item-header {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.protocols__item-header.is-selected {
   background: linear-gradient(90deg, #06b6d4 0%, #7c3aed 100%);
   color: #fff
 }
@@ -160,5 +202,31 @@ function onInput() {
   padding: 8px;
   border-radius: 8px;
   cursor: pointer
+}
+
+.protocols__submenu {
+  list-style: none;
+  padding: 0;
+  margin: 2px 0 0 0;
+}
+
+.protocols__submenu-item {
+  padding: 6px 10px 6px 24px;
+  /* Indented */
+  font-size: 0.9em;
+  color: #475467;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+.protocols__submenu-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.protocols__submenu-item.is-active {
+  color: #06b6d4;
+  font-weight: 600;
+  background: rgba(6, 182, 212, 0.05);
 }
 </style>

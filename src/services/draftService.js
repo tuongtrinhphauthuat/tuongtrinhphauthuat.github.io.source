@@ -1,10 +1,11 @@
 const STORAGE_PREFIX = 'protocol_draft_';
 
 export default {
-    saveDraft(id, content) {
+    saveDraft(id, content, title = null) {
         if (!id) return;
         try {
-            localStorage.setItem(STORAGE_PREFIX + id, content);
+            const data = { content, title };
+            localStorage.setItem(STORAGE_PREFIX + id, JSON.stringify(data));
         } catch (e) {
             console.error('Failed to save draft', e);
         }
@@ -12,7 +13,19 @@ export default {
 
     getDraft(id) {
         if (!id) return null;
-        return localStorage.getItem(STORAGE_PREFIX + id);
+        const raw = localStorage.getItem(STORAGE_PREFIX + id);
+        if (!raw) return null;
+        try {
+            const data = JSON.parse(raw);
+            if (data && typeof data === 'object' && 'content' in data) {
+                return data;
+            }
+            // Legacy: raw string is content
+            return { content: raw, title: null };
+        } catch (e) {
+            // Legacy: raw string is content
+            return { content: raw, title: null };
+        }
     },
 
     clearDraft(id) {

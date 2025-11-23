@@ -1,10 +1,11 @@
 <template>
   <div class="protocols">
-    <Sidebar :protocols="store.protocols" :selectedId="store.selectedId" @select="onSelect" @refresh="onRefresh"
-      @open-edit="openEditLink" @open-settings="showSettings = true" />
+    <Sidebar :protocols="store.protocols" :selectedId="store.selectedId" :selectedVersion="store.selectedVersion"
+      @select="onSelect" @refresh="onRefresh" @open-edit="openEditLink" @open-settings="showSettings = true" />
     <div id="display-main-container" class="protocols__main">
-      <ProtocolViewer id="display-viewer-wrapper" ref="viewerRef" :current="current" :loading="store.loading"
-        :error="store.error" :draftHtml="viewerContentOverride" @copy="onCopy" @edited="onEdited" @reset="onViewerReset"
+      <ProtocolViewer id="display-viewer-wrapper" ref="viewerRef" :current="current"
+        :selectedVersion="store.selectedVersion" :loading="store.loading" :error="store.error"
+        :draftHtml="viewerContentOverride" @copy="onCopy" @edited="onEdited" @reset="onViewerReset"
         @toggle-fullscreen="toggleFullscreen" />
 
       <LoadingProgress v-if="store.loading" />
@@ -110,9 +111,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', globalKeyHandler)
 })
 
-function onSelect(item) {
+function onSelect(item, version) {
   const id = item?.STT ?? item?.id ?? item?.['STT'] ?? item?.['Tên'] ?? null
-  if (id != null) store.selectById(id)
+  if (id != null) store.selectById(id, version)
 }
 
 function doCopy() {
@@ -127,7 +128,13 @@ async function copySource() {
   try {
     let html = ''
     if (viewerRef.value && viewerRef.value.getEditorHtml) html = viewerRef.value.getEditorHtml()
-    const src = htmlToSource(html || '')
+    let src = htmlToSource(html || '')
+
+    // Prepend version title if available
+    const vTitle = viewerRef.value?.getEditedTitle ? viewerRef.value.getEditedTitle() : (store.selectedVersion?.title || '')
+    if (store.selectedVersion && vTitle) {
+      src = `(#${vTitle}) ${src}`
+    }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(src)
     } else {
