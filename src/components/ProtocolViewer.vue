@@ -327,6 +327,8 @@ function onOptionChange(opt) {
   // apply choice in DOM (for backward compatibility if used)
   const res = applyChoiceInDom(editor.value, opt.id, opt.selected)
   if (res) mergeOptions(res.options, res.varDefs)
+  // ensure any variables in the newly selected option are rendered
+  replaceVarTokensInDom(editor.value, varDefs.value)
   onInput() // Trigger save
 }
 
@@ -358,6 +360,8 @@ function applyAndClose() {
   opt.selected = Number(popupSelectedIndex.value)
   const res = applyChoiceInDom(editor.value, opt.id, opt.selected)
   if (res) mergeOptions(res.options, res.varDefs)
+  // ensure any variables in the newly selected option are rendered
+  replaceVarTokensInDom(editor.value, varDefs.value)
   popupVisible.value = false
   activeOptId.value = null
   popupType.value = null
@@ -376,6 +380,8 @@ function chooseAndClose(index) {
   }
   const res = applyChoiceInDom(editor.value, opt.id, opt.selected)
   if (res) mergeOptions(res.options, res.varDefs)
+  // ensure any variables in the newly selected option are rendered
+  replaceVarTokensInDom(editor.value, varDefs.value)
   popupVisible.value = false
   activeOptId.value = null
   popupType.value = null
@@ -416,6 +422,16 @@ function onEditorClick(e) {
   if (!tgt) return
   if (tgt.nodeType === Node.TEXT_NODE) tgt = tgt.parentElement
 
+  // detect variable spans FIRST so nested variables can be clicked
+  const spanVar = tgt.closest ? tgt.closest('.bracket-var') : null
+  if (spanVar) {
+    const name = spanVar.getAttribute('data-var-name')
+    const rect = spanVar.getBoundingClientRect()
+    // use mouse X, but element bottom Y
+    openPopupForVar(name, e.clientX, rect.bottom + 4)
+    return
+  }
+
   // detect bracket option spans
   const spanOpt = tgt.closest ? tgt.closest('.bracket-opt') : null
   if (spanOpt) {
@@ -425,15 +441,7 @@ function onEditorClick(e) {
     openPopupForOpt(id, e.clientX, rect.bottom + 4)
     return
   }
-  // detect variable spans
-  const spanVar = tgt.closest ? tgt.closest('.bracket-var') : null
-  if (spanVar) {
-    const name = spanVar.getAttribute('data-var-name')
-    const rect = spanVar.getBoundingClientRect()
-    // use mouse X, but element bottom Y
-    openPopupForVar(name, e.clientX, rect.bottom + 4)
-    return
-  }
+
   // click outside bracket closes popup
   if (popupVisible.value) popupVisible.value = false
 }
@@ -450,7 +458,15 @@ const popupItems = computed(() => {
       const sel = Number(o.selected || 0)
       return sel === 0 ? [t('hide')] : [t('show')]
     }
-    return o.choices || []
+    // Replace variables in choices with their current values
+    return (o.choices || []).map(choice => {
+      let display = choice
+      varDefs.value.forEach(v => {
+        const val = v.choices[v.selected] || ''
+        display = display.split(`$${v.name}$`).join(val)
+      })
+      return display
+    })
   }
   if (popupType.value === 'var') {
     const v = varDefs.value.find((x) => x.name === activeVarName.value) || { choices: [] }
