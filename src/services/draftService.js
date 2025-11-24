@@ -36,5 +36,16 @@ export default {
     hasDraft(id) {
         if (!id) return false;
         return !!localStorage.getItem(STORAGE_PREFIX + id);
+    },
+
+    clearAllDrafts() {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(STORAGE_PREFIX)) {
+                keys.push(key);
+            }
+        }
+        keys.forEach(k => localStorage.removeItem(k));
     }
 }

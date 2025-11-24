@@ -42,7 +42,14 @@ const translations = {
         shortcutFullscreen: 'Chuyển đổi chế độ toàn màn hình cho trình soạn thảo',
         shortcutReset: 'Nút đặt lại: Nhấp đúp để đặt lại ngay; nhấp đơn để mở hộp thoại xác nhận',
         shortcutNote: 'Lưu ý: Nếu bạn cập nhật bất kỳ phím tắt nào, hãy cập nhật thành phần này để giữ cho văn bản trợ giúp được đồng bộ.',
-        loadingMessage: 'Đang tải phác đồ và phân tích nội dung…'
+        loadingMessage: 'Đang tải phác đồ và phân tích nội dung…',
+        generalSettings: 'Cài đặt chung',
+        dataSettings: 'Dữ liệu',
+        dangerZone: 'Vùng nguy hiểm',
+        clearAllDrafts: 'Xóa toàn bộ bản nháp',
+        clearAllDraftsDescription: 'Xóa tất cả các bản nháp đang chỉnh sửa. Các cài đặt và dữ liệu gốc sẽ được giữ nguyên.',
+        confirmClearDraftsTitle: 'Xác nhận xóa bản nháp',
+        confirmClearDraftsMessage: 'Bạn có chắc chắn muốn xóa toàn bộ các bản nháp đã lưu? Hành động này không thể hoàn tác.'
     },
     en: {
         selectProtocol: 'Select a protocol to view or edit',
@@ -83,7 +90,14 @@ const translations = {
         shortcutFullscreen: 'Toggle full screen mode for editor',
         shortcutReset: 'Reset button: Double-click to reset immediately; single-click opens confirmation dialog',
         shortcutNote: 'Note: If you update any shortcuts, update this component to keep the help text in sync.',
-        loadingMessage: 'Loading protocols and parsing content…'
+        loadingMessage: 'Loading protocols and parsing content…',
+        generalSettings: 'General Settings',
+        dataSettings: 'Data',
+        dangerZone: 'Danger Zone',
+        clearAllDrafts: 'Clear All Drafts',
+        clearAllDraftsDescription: 'Delete all saved drafts. Settings and original data will be preserved.',
+        confirmClearDraftsTitle: 'Confirm Clear Drafts',
+        confirmClearDraftsMessage: 'Are you sure you want to delete all saved drafts? This action cannot be undone.'
     }
 };
 
