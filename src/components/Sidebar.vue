@@ -2,7 +2,7 @@
   <aside id="sidebar-container" class="protocols__sidebar">
     <div class="protocols__search">
       <input id="sidebar-search-input" class="protocols__input" v-model="q" :placeholder="t('searchPlaceholder')"
-        @input="onInput" />
+        autocomplete="off" @input="onInput" />
     </div>
 
     <ul id="sidebar-list" class="protocols__list">
@@ -14,7 +14,8 @@
         </div>
 
         <!-- Version Submenu -->
-        <ul v-if="(isSelected(item) || (q && q.length > 0)) && item.versions && item.versions.length > 1"
+        <ul
+          v-if="(isSelected(item) || tokens.length > 0) && item.versions && item.versions.length > (tokens.length > 0 ? 0 : 1)"
           class="protocols__submenu">
           <li v-for="(v, vIdx) in item.versions" :key="vIdx"
             :class="['protocols__submenu-item', { 'is-active': isVersionSelected(v) }]"
@@ -79,13 +80,12 @@ const filtered = computed(() => {
   return list.map(p => {
     // Check protocol name
     const name = (nameOf(p) || '').toLowerCase()
-    const nameMatch = low.every((t) => name.includes(t))
+    const nameMatch = checkMatch(name, low)
 
     // Check versions
     const matchingVersions = (p.versions || []).filter(v => {
       const vTitle = (v.title || '').toLowerCase()
-      // Optional: search content too if desired, but sticking to title for now as per usual UI patterns
-      return low.every(t => vTitle.includes(t))
+      return checkMatch(vTitle, low)
     })
 
     if (nameMatch) return p
@@ -96,6 +96,46 @@ const filtered = computed(() => {
     return null
   }).filter(Boolean)
 })
+
+function checkMatch(text, tokens) {
+  if (!text) return false
+  // Sort tokens by length descending to match longest specific terms first
+  const sortedTokens = [...tokens].sort((a, b) => b.length - a.length)
+  const mask = new Array(text.length).fill(false)
+
+  for (const token of sortedTokens) {
+    let found = false
+    let startIndex = 0
+    while (startIndex < text.length) {
+      const idx = text.indexOf(token, startIndex)
+      if (idx === -1) break // Not found
+
+      // Check overlap
+      let overlap = false
+      for (let i = 0; i < token.length; i++) {
+        if (mask[idx + i]) {
+          overlap = true
+          break
+        }
+      }
+
+      if (!overlap) {
+        // Mark used
+        for (let i = 0; i < token.length; i++) {
+          mask[idx + i] = true
+        }
+        found = true
+        break // Move to next token
+      }
+
+      // If overlap, try next occurrence
+      startIndex = idx + 1
+    }
+
+    if (!found) return false
+  }
+  return true
+}
 
 function select(item) {
   // If multiple versions, select the first one by default or just the protocol?

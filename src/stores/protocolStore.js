@@ -93,7 +93,28 @@ export const useProtocolStore = defineStore('protocol', {
         const v = p.versions.find(v => v.title === oldTitle || v.originalTitle === oldTitle || (v.id && v.title === oldTitle))
         if (v) {
           v.title = newTitle
-          v.isEdited = (v.title !== v.originalTitle)
+          // If title changed, it's edited. If title reverted to original, check if content is also original?
+          // For simplicity, we track title edit separately or just assume if title != originalTitle it is edited.
+          // But we also want to track content edits.
+          // Let's rely on the caller to manage the full isEdited state or just update title here.
+          // We will update isEdited based on title change here, but OR it with existing isEdited (from content) might be safer?
+          // For now, let's just check title difference.
+          const titleChanged = v.title !== v.originalTitle
+          // We don't want to clear isEdited if content is still modified.
+          // So we should probably not overwrite isEdited to false if it was true, unless we know content is clean.
+          // But here we only know about title.
+          // Let's just set it if title changed. If title matches, we leave it alone (it might be true due to content).
+          if (titleChanged) v.isEdited = true
+        }
+      }
+    },
+
+    markVersionAsEdited(protocolId, versionTitle, isEdited) {
+      const p = this.protocols.find(p => String(p.id) === String(protocolId) || String(p.stt) === String(protocolId))
+      if (p && p.versions) {
+        const v = p.versions.find(v => v.title === versionTitle || (v.originalTitle && v.originalTitle === versionTitle))
+        if (v) {
+          v.isEdited = isEdited
         }
       }
     }

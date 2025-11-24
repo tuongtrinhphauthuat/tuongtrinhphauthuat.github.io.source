@@ -190,6 +190,14 @@ function onEdited(payload) {
   if (!payload || !payload.id) return
   draftHtmlForViewer.value = payload.html
   versionsStatus.value = `${t('unsavedDraft')} ${payload.id}`
+
+  // Mark as edited in store so UI updates (asterisk, reset button)
+  if (store.selectedVersion && store.selectedId) {
+    const contentChanged = payload.isChanged
+    const titleChanged = store.selectedVersion.title !== store.selectedVersion.originalTitle
+    const isEdited = contentChanged || titleChanged
+    store.markVersionAsEdited(store.selectedId, store.selectedVersion.title, isEdited)
+  }
 }
 
 watch(() => store.selectedId, () => {
