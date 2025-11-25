@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx'
+import { parseImageRows } from './imageService'
 
 export async function parseData(url) {
     try {
@@ -49,11 +50,25 @@ export async function parseData(url) {
                 })
             })
 
+            const imageKeys = Object.keys(row).filter(k => k && k.toLowerCase().startsWith('hình ảnh'))
+            imageKeys.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+            let images = []
+            imageKeys.forEach(key => {
+                const rawImages = row[key]
+                if (!rawImages) return
+                const parsed = parseImageRows(rawImages, {
+                    idPrefix: `p${index + 1}`,
+                    startIndex: images.length
+                })
+                if (parsed.length) images = images.concat(parsed)
+            })
+
             return {
                 id: index + 1,
                 stt: row['STT'],
                 name: row['Tên'] || row['Tên phẫu thuật'] || row['Tên Protocol'] || 'Unnamed Protocol',
-                versions
+                versions,
+                images
             }
         })
     } catch (error) {
