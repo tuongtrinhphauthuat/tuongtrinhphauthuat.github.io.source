@@ -292,7 +292,8 @@ export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
   // We should preserve this behavior.
 
   function escapeRegex(str) {
-    return str.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')
+    // Escape regex special chars so literal tokens like $var$ are matched everywhere
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   }
 
   if (varDefs.length) {

@@ -1,5 +1,12 @@
 import * as XLSX from 'xlsx'
 import { parseImageRows } from './imageService'
+import {
+    detectInheritanceDirective,
+    parseOverrideTokens,
+    applyInheritanceOverrides,
+    normalizeContentKey,
+    extractFirstNumber
+} from './inheritanceService'
 
 export async function parseData(url) {
     try {
@@ -18,36 +25,100 @@ export async function parseData(url) {
         return jsonData.map((row, index) => {
             const versions = []
 
-            // Find all keys that start with "Nội dung"
             const contentKeys = Object.keys(row).filter(k => k.toLowerCase().startsWith('nội dung'))
+            contentKeys.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
 
-            // Sort keys to ensure order (Nội dung 1, Nội dung 2...)
-            contentKeys.sort((a, b) => {
-                return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
-            })
+            const processedColumns = new Map()
+            const processedNumbers = new Map()
+
+            const findParentMeta = (inheritInfo) => {
+                if (!inheritInfo) return null
+                if (inheritInfo.parentKeyNormalized) {
+                    const meta = processedColumns.get(inheritInfo.parentKeyNormalized)
+                    if (meta) return meta
+                }
+                if (inheritInfo.parentNumber && processedNumbers.has(inheritInfo.parentNumber)) {
+                    return processedNumbers.get(inheritInfo.parentNumber)
+                }
+                return null
+            }
 
             contentKeys.forEach(key => {
                 let rawContent = row[key]
                 if (!rawContent) return
 
-                // Extract title: (#Title)
                 let title = `Version ${versions.length + 1}`
                 const titleMatch = rawContent.match(/\(#(.*?)\)/)
-
                 if (titleMatch) {
                     title = titleMatch[1].trim()
                 }
 
-                // Remove the title marker from the content for display
-                const displayContent = rawContent.replace(/\(#.*?\)/g, '').trim()
+                let workingContent = rawContent.replace(/\(#.*?\)/g, '').trim()
+                const inheritDirective = detectInheritanceDirective(workingContent)
+                let inheritMeta = null
 
-                versions.push({
+                if (inheritDirective) {
+                    const overridesInfo = parseOverrideTokens(inheritDirective.overridesText)
+                    const parentMeta = findParentMeta(inheritDirective)
+                    if (parentMeta && (parentMeta.rawContent || parentMeta.displayContent)) {
+                        const parentSource = parentMeta.rawContent || parentMeta.displayContent
+                        let inheritedContent = applyInheritanceOverrides(parentSource, overridesInfo.overrides)
+                        if (overridesInfo.leftoverText) {
+                            inheritedContent = `${inheritedContent}\n${overridesInfo.leftoverText}`.trim()
+                        }
+                        workingContent = inheritedContent
+                        inheritMeta = {
+                            parentKey: parentMeta.key,
+                            parentVersionId: parentMeta.version.id,
+                            parentTitle: parentMeta.version.title,
+                            directive: inheritDirective.directiveBody,
+                            overridesRaw: inheritDirective.overridesText,
+                            overrides: overridesInfo.overrides
+                        }
+                        if (overridesInfo.leftoverText) {
+                            inheritMeta.leftoverText = overridesInfo.leftoverText
+                        }
+                    } else {
+                        inheritMeta = {
+                            directive: inheritDirective.directiveBody,
+                            overridesRaw: inheritDirective.overridesText,
+                            warning: 'parent-not-found'
+                        }
+                        if (inheritDirective.overridesText) {
+                            workingContent = inheritDirective.overridesText
+                        }
+                    }
+                }
+
+                const versionEntry = {
                     id: `v${versions.length + 1}`,
                     title,
                     originalTitle: title,
-                    content: rawContent, // Keep original for reference if needed
-                    displayContent
-                })
+                    content: rawContent,
+                    displayContent: workingContent,
+                    rawContent: workingContent,
+                    inherit: inheritMeta,
+                    isInherited: Boolean(inheritMeta && inheritMeta.parentVersionId)
+                }
+
+                versions.push(versionEntry)
+
+                const normalizedKey = normalizeContentKey(key)
+                const numberKey = extractFirstNumber(key)
+                const columnMeta = {
+                    key,
+                    normalizedKey,
+                    numberKey,
+                    version: versionEntry,
+                    displayContent: workingContent,
+                    rawContent: workingContent
+                }
+                if (normalizedKey) {
+                    processedColumns.set(normalizedKey, columnMeta)
+                }
+                if (numberKey) {
+                    processedNumbers.set(numberKey, columnMeta)
+                }
             })
 
             const imageKeys = Object.keys(row).filter(k => k && k.toLowerCase().startsWith('hình ảnh'))

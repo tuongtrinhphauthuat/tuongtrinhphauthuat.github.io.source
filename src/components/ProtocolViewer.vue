@@ -13,6 +13,10 @@
             :placeholder="t('versionTitle')" />
           <span v-if="selectedVersion && selectedVersion.isEdited"
             style="color:#f59e0b;font-weight:bold;margin-left:4px;font-size:1.2rem">*</span>
+          <span v-if="inheritBadgeText" class="inherit-badge" :title="inheritTooltip" role="note"
+            aria-live="polite">
+            {{ inheritBadgeText }}
+          </span>
           <div class="title-icons" role="toolbar" aria-label="Protocol actions">
             <!-- Reset: double-click to reset immediately. Single click opens confirmation dialog. -->
             <button id="viewer-btn-reset" class="viewer-icon-btn reset" @click.stop.prevent="onResetClick"
@@ -117,6 +121,34 @@ const availableImages = computed(() => {
 })
 
 const visibleImages = computed(() => filterImagesByVariables(availableImages.value, varDefs.value))
+
+const inheritBadgeText = computed(() => {
+  if (!props.selectedVersion || !props.selectedVersion.isInherited) return ''
+  const inherit = props.selectedVersion.inherit || {}
+  const parentLabel = inherit.parentTitle || inherit.parentKey || inherit.directive || ''
+  const prefix = currentLang.value === 'vi' ? 'Kế thừa' : 'Inherited'
+  return parentLabel ? `${prefix}: ${parentLabel}` : prefix
+})
+
+const inheritTooltip = computed(() => {
+  if (!props.selectedVersion || !props.selectedVersion.isInherited) {
+    return ''
+  }
+  const inherit = props.selectedVersion.inherit || {}
+  const lines = []
+  if (inherit.parentTitle) {
+    lines.push(`${currentLang.value === 'vi' ? 'Từ cột' : 'Parent'}: ${inherit.parentTitle}`)
+  } else if (inherit.parentKey) {
+    lines.push(`${currentLang.value === 'vi' ? 'Cột' : 'Column'}: ${inherit.parentKey}`)
+  }
+  if (inherit.directive) {
+    lines.push(`${currentLang.value === 'vi' ? 'Directive' : 'Directive'}: ${inherit.directive}`)
+  }
+  if (inherit.overridesRaw) {
+    lines.push(`${currentLang.value === 'vi' ? 'Ghi chú' : 'Overrides'}: ${inherit.overridesRaw}`)
+  }
+  return lines.join('\n') || (currentLang.value === 'vi' ? 'Phiên bản kế thừa' : 'Inherited version')
+})
 
 watch(
   [() => props.current, () => props.selectedVersion],
@@ -660,6 +692,18 @@ onMounted(() => {
 .title-version-input:focus {
   border-color: #eab308;
   box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
+}
+
+.inherit-badge {
+  background: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  color: #0369a1;
+  font-size: .95rem;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  margin-left: 4px;
+  white-space: nowrap;
 }
 
 .title-icons {
