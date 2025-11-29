@@ -131,16 +131,24 @@ export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
               const tmp = rhs.replace(/\/\//g, PLACEHOLDER)
               let choicesR = []
               if (tmp.includes('/')) {
-                choicesR = tmp.split('/').map((s) => s.replace(new RegExp(PLACEHOLDER, 'g'), '/').trim()).filter(Boolean)
+                choicesR = tmp
+                  .split('/')
+                  .map((s) => (s == null ? '' : s).replace(new RegExp(PLACEHOLDER, 'g'), '/').trim())
+                  .filter((s) => s !== '')
               } else {
                 choicesR = [rhs]
+              }
+
+              if (!choicesR.length) {
+                const fallback = rhs.replace(/\/\//g, '/').trim()
+                choicesR = [fallback || '']
               }
 
               // Detect defaults
               let selectedIndex = 0
               const starred = []
               choicesR = choicesR.map((c, idx) => {
-                let v = c
+                let v = c ?? ''
                 let isStar = false
                 if (v.startsWith('*')) { isStar = true; v = v.slice(1).trim() }
                 if (v.endsWith('*')) { isStar = true; v = v.slice(0, -1).trim() }
@@ -177,7 +185,15 @@ export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
           const innerEscaped = inner.replace(/\/\//g, PLACEHOLDER)
           const rawChoices = splitBySeparator(innerEscaped, '/')
 
-          let choices = rawChoices.map(s => s.replace(new RegExp(PLACEHOLDER, 'g'), '/').trim()).filter(Boolean)
+          let choices = rawChoices
+            .map((s) => (s == null ? '' : s).replace(new RegExp(PLACEHOLDER, 'g'), '/').trim())
+            .filter((s) => s !== '')
+
+          if (!choices.length) {
+            // Fall back to the original inner text so we never pass undefined further down
+            const fallback = inner.replace(/\/\//g, '/').trim()
+            choices = [fallback || '']
+          }
 
           let type = 'multi'
           let selectedIndex = undefined
@@ -186,7 +202,7 @@ export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
             // Multi choice
             const starred = []
             choices = choices.map((c, idx) => {
-              let v = c
+              let v = c ?? ''
               let isStar = false
               if (v.startsWith('*')) { isStar = true; v = v.slice(1).trim() }
               if (v.endsWith('*')) { isStar = true; v = v.slice(0, -1).trim() }
@@ -197,9 +213,10 @@ export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
           } else {
             // Single choice
             type = 'single'
-            let phrase = inner // Use original inner (with // restored if any)
-            // Actually, choices[0] is the phrase
-            phrase = choices[0]
+            let phrase = choices[0]
+            if (!phrase) {
+              phrase = inner.replace(/\/\//g, '/').trim()
+            }
             let isHidden = false
             if (phrase.startsWith('*')) { isHidden = true; phrase = phrase.slice(1).trim() }
             choices = [phrase]

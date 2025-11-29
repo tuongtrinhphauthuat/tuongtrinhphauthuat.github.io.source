@@ -498,6 +498,25 @@ function onEditorClick(e) {
 }
 
 // compute popup items depending on popupType
+const varDisplayMap = computed(() => {
+  const map = {}
+  varDefs.value.forEach((v) => {
+    const val = Array.isArray(v.choices) ? v.choices[v.selected] : ''
+    map[v.name] = val || ''
+  })
+  return map
+})
+
+function resolveChoiceLabel(choiceText = '') {
+  if (!choiceText || !choiceText.includes('$')) return choiceText || ''
+  return choiceText.replace(/\$([^$]+)\$/g, (_m, name) => {
+    const trimmed = String(name || '').trim()
+    return Object.prototype.hasOwnProperty.call(varDisplayMap.value, trimmed)
+      ? varDisplayMap.value[trimmed]
+      : `$${trimmed}$`
+  })
+}
+
 const popupItems = computed(() => {
   if (!popupType.value) return []
   if (popupType.value === 'opt') {
@@ -510,18 +529,11 @@ const popupItems = computed(() => {
       return sel === 0 ? [t('hide')] : [t('show')]
     }
     // Replace variables in choices with their current values
-    return (o.choices || []).map(choice => {
-      let display = choice
-      varDefs.value.forEach(v => {
-        const val = v.choices[v.selected] || ''
-        display = display.split(`$${v.name}$`).join(val)
-      })
-      return display
-    })
+    return (o.choices || []).map((choice) => resolveChoiceLabel(choice))
   }
   if (popupType.value === 'var') {
     const v = varDefs.value.find((x) => x.name === activeVarName.value) || { choices: [] }
-    return v.choices || []
+    return (v.choices || []).map((choice) => resolveChoiceLabel(choice))
   }
   return []
 })

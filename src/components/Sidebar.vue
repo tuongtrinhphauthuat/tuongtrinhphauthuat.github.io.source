@@ -77,24 +77,36 @@ const filtered = computed(() => {
   if (!tokens.value.length) return list
   const low = tokens.value.map((t) => t.toLowerCase())
 
-  return list.map(p => {
-    // Check protocol name
-    const name = (nameOf(p) || '').toLowerCase()
-    const nameMatch = checkMatch(name, low)
+  return list
+    .map((p) => {
+      const rawName = nameOf(p) || ''
+      const lowerName = rawName.toLowerCase()
+      const versions = Array.isArray(p.versions) ? p.versions : []
 
-    // Check versions
-    const matchingVersions = (p.versions || []).filter(v => {
-      const vTitle = (v.title || '').toLowerCase()
-      return checkMatch(vTitle, low)
+      const matchingVersions = versions.filter((v) => {
+        const lowerTitle = (v.title || '').toLowerCase()
+        // Allow token coverage to span the parent title and the version title.
+        const combined = `${lowerName} ${lowerTitle}`.trim()
+        return checkMatch(combined, low)
+      })
+
+      const nameMatch = checkMatch(lowerName, low)
+
+      if (nameMatch) {
+        if (matchingVersions.length) {
+          return { ...p, versions: matchingVersions }
+        }
+        return p
+      }
+
+      if (matchingVersions.length) {
+        // Return a copy with only matching versions to highlight them
+        return { ...p, versions: matchingVersions }
+      }
+
+      return null
     })
-
-    if (nameMatch) return p
-    if (matchingVersions.length) {
-      // Return a copy with only matching versions to highlight them
-      return { ...p, versions: matchingVersions }
-    }
-    return null
-  }).filter(Boolean)
+    .filter(Boolean)
 })
 
 function checkMatch(text, tokens) {
