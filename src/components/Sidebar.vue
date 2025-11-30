@@ -25,24 +25,11 @@
         </ul>
       </li>
     </ul>
-    <div id="sidebar-bottom-bar" class="sidebar__bottombar">
-      <button id="sidebar-btn-refresh" class="icon-btn" :title="t('refreshProtocols')"
-        @click="$emit('refresh')">🔄</button>
-      <button id="sidebar-btn-edit" class="icon-btn" :title="t('openSpreadsheet')"
-        @click="$emit('open-edit')">✏️</button>
-      <button id="sidebar-btn-settings" class="icon-btn" :title="t('settings')"
-        @click="$emit('open-settings')">⚙️</button>
-      <button id="sidebar-btn-shortcuts" class="icon-btn" :title="t('shortcuts')" @click="showShortcuts = true"
-        :aria-label="t('shortcuts')">⌨️</button>
-    </div>
-
-    <ShortcutsDialog v-if="showShortcuts" @close="showShortcuts = false" />
   </aside>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import ShortcutsDialog from './ShortcutsDialog.vue'
 import languageService from '../services/languageService'
 
 const { t } = languageService
@@ -52,10 +39,9 @@ const props = defineProps({
   selectedId: { type: [String, Number], default: null },
   selectedVersion: { type: Object, default: null }
 })
-const emit = defineEmits(['select', 'refresh', 'open-edit', 'open-settings'])
+const emit = defineEmits(['select'])
 
 const q = ref('')
-const showShortcuts = ref(false)
 
 function nameOf(obj) {
   return obj && (obj['Tên'] || obj['name'] || obj['Name'] || obj['title'] || '')
@@ -185,8 +171,6 @@ function displayLabel(item, idx) {
 function onInput() {
   // computed filtering is instant — left for future debouncing
 }
-
-// expose showShortcuts for template
 </script>
 
 <style scoped>
@@ -236,24 +220,6 @@ function onInput() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis
-}
-
-.sidebar__bottombar {
-  display: flex;
-  gap: 10px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(16, 24, 40, .04);
-  align-items: center;
-  margin-top: auto;
-  flex-shrink: 0
-}
-
-.icon-btn {
-  background: #fff;
-  border: 1px solid #e3e8ef;
-  padding: 8px;
-  border-radius: 8px;
-  cursor: pointer
 }
 
 .protocols__submenu {

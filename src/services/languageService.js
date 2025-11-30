@@ -1,6 +1,38 @@
-import { ref } from 'vue';
+import { ref } from 'vue'
 
-const currentLang = ref('vi'); // Default to Vietnamese
+const STORAGE_KEY = 'protocol_language'
+
+function safeReadLanguage() {
+    if (typeof window === 'undefined' || !window.localStorage) return null
+    try {
+        return window.localStorage.getItem(STORAGE_KEY)
+    } catch (err) {
+        console.warn('Unable to read stored language', err)
+        return null
+    }
+}
+
+function safeWriteLanguage(lang) {
+    if (typeof window === 'undefined' || !window.localStorage) return
+    try {
+        window.localStorage.setItem(STORAGE_KEY, lang)
+    } catch (err) {
+        console.warn('Unable to persist language preference', err)
+    }
+}
+
+const languageOptions = [
+    { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
+    { code: 'en', label: 'English', flag: '🇺🇸' }
+]
+
+const initialLang = (() => {
+    const stored = safeReadLanguage()
+    if (stored && ['vi', 'en'].includes(stored)) return stored
+    return 'vi'
+})()
+
+const currentLang = ref(initialLang)
 
 const translations = {
     vi: {
@@ -36,6 +68,36 @@ const translations = {
         language: 'Ngôn ngữ',
         vietnamese: 'Tiếng Việt',
         english: 'Tiếng Anh',
+        menuFile: 'Tập tin',
+        menuEdit: 'Chỉnh sửa',
+        menuTools: 'Công cụ',
+        menuHelp: 'Trợ giúp',
+        menuFileRefresh: 'Làm mới dữ liệu',
+        menuFileRefreshDesc: 'Tải lại toàn bộ danh sách phác đồ',
+        menuFileGoogleSheet: 'Sửa đường dẫn Google Sheet',
+        menuFileGoogleSheetDesc: 'Mở cài đặt nguồn dữ liệu',
+        menuFileEditSheet: 'Sửa file Google Sheet',
+        menuFileEditSheetDesc: 'Mở bảng tính Google Sheet trong tab mới',
+        menuFileNewDesign: 'Thiết kế mới',
+        menuFileNewDesignDesc: 'Tính năng sẽ bổ sung sau',
+        menuEditCopy: 'Sao chép',
+        menuEditCopyDesc: 'Sao chép phác đồ đang xem',
+        menuEditCopySource: 'Sao chép mã nguồn',
+        menuEditCopySourceDesc: 'Sao chép mã nguồn phác đồ dạng thô',
+        menuEditClearDrafts: 'Xóa bộ nhớ tạm',
+        menuEditClearDraftsDesc: 'Xóa toàn bộ bản nháp',
+        menuEditResetAll: 'Reset toàn bộ',
+        menuEditResetAllDesc: 'Xóa dữ liệu lưu cục bộ và tải lại',
+        menuToolsLanguage: 'Ngôn ngữ',
+        menuToolsLanguageDesc: 'Chọn ngôn ngữ giao diện',
+        menuToolsFontSize: 'Kích thước chữ',
+        menuToolsFontSizeDesc: 'Điều chỉnh kích thước chữ toàn hệ thống',
+        menuHelpGuide: 'Hướng dẫn sử dụng',
+        menuHelpGuideDesc: 'Mở tài liệu hướng dẫn',
+        menuHelpShortcuts: 'Phím tắt',
+        menuHelpShortcutsDesc: 'Xem bảng phím tắt hiện có',
+        menuHelpAuthor: 'Thông tin tác giả',
+        menuHelpAuthorDesc: 'Giới thiệu về bác sĩ Trần Quốc Hoài',
         close: 'Đóng',
         shortcutCopy: 'Sao chép phác đồ hiện tại (khi không có văn bản nào được chọn)',
         shortcutCopySource: 'Sao chép mã nguồn phác đồ (văn bản nguồn thô)',
@@ -49,7 +111,38 @@ const translations = {
         clearAllDrafts: 'Xóa toàn bộ bản nháp',
         clearAllDraftsDescription: 'Xóa tất cả các bản nháp đang chỉnh sửa. Các cài đặt và dữ liệu gốc sẽ được giữ nguyên.',
         confirmClearDraftsTitle: 'Xác nhận xóa bản nháp',
-        confirmClearDraftsMessage: 'Bạn có chắc chắn muốn xóa toàn bộ các bản nháp đã lưu? Hành động này không thể hoàn tác.'
+        confirmClearDraftsMessage: 'Bạn có chắc chắn muốn xóa toàn bộ các bản nháp đã lưu? Hành động này không thể hoàn tác.',
+        fontSizeDialogTitle: 'Kích thước chữ',
+        fontSizeSampleLabel: 'Số và text drquochoai',
+        fontSizePresetSmall: 'Nhỏ',
+        fontSizePresetMedium: 'Vừa',
+        fontSizePresetLarge: 'Lớn',
+        fontSizeHint: 'Điều chỉnh thanh trượt hoặc chọn nhanh để áp dụng ngay.',
+        languageDialogTitle: 'Chọn ngôn ngữ hiển thị',
+        languageDialogDescription: 'Thay đổi sẽ áp dụng ngay cho toàn bộ phần mềm.',
+        authorDialogTitle: 'Thông tin tác giả',
+        authorDialogDescription: 'Bác sĩ Trần Quốc Hoài — chuyên gia phẫu thuật lồng ngực và là chủ sở hữu nội dung.',
+        authorDialogSummary: 'BS.CKI. Trần Quốc Hoài hiện công tác tại Trung tâm Ngoại Lồng ngực - Mạch máu, Bệnh viện Đa khoa Tâm Anh TP.HCM; tập trung điều trị các bệnh lý tim mạch, lồng ngực, tuyến giáp và mạch máu, đồng thời nghiên cứu tích cực ứng dụng công nghệ và AI vào chăm sóc bệnh nhân.',
+        authorDialogSpecialtiesTitle: 'Chuyên môn chính',
+        authorDialogSpecialtySurgery: 'Phẫu thuật tim mạch - lồng ngực, phẫu thuật tuyến giáp và xử trí cấp cứu mạch máu.',
+        authorDialogSpecialtyVascular: 'Can thiệp nội mạch, tạo AVF, điều trị suy giãn tĩnh mạch và phình mạch chủ.',
+        authorDialogSpecialtyInnovation: 'Nghiên cứu, ứng dụng trí tuệ nhân tạo và công nghệ số trong chẩn đoán, điều trị.',
+        authorDialogContactTitle: 'Liên hệ trực tiếp',
+        authorDialogContactLocation: 'Trung tâm Ngoại Lồng ngực - Mạch máu, Bệnh viện Đa khoa Tâm Anh TP.HCM.',
+        authorDialogPhoneLabel: 'Điện thoại/Zalo',
+        authorDialogEmailLabel: 'Email',
+        authorDialogContactButton: 'Xem chi tiết & liên hệ',
+        helpLinkComingSoon: 'Liên kết hướng dẫn sẽ được bổ sung sau.',
+        comingSoon: 'Tính năng đang được phát triển.',
+        draftsClearedToast: 'Đã xóa bộ nhớ tạm, ứng dụng sẽ tải lại.',
+        appResetConfirmTitle: 'Reset toàn bộ dữ liệu',
+        appResetConfirmMessage: 'Xóa tất cả dữ liệu lưu cục bộ (nguồn, bản nháp, cài đặt) và tải lại ứng dụng?',
+        appResetAction: 'Reset ngay',
+        appResetToast: 'Đã reset dữ liệu, đang tải lại...',
+        languageUpdatedToast: 'Đã cập nhật ngôn ngữ.',
+        fontSizeUpdatedToast: 'Đã cập nhật kích thước chữ.',
+        authorDialogButton: 'Đóng',
+        versionTitle: 'Tên phiên bản'
     },
     en: {
         selectProtocol: 'Select a protocol to view or edit',
@@ -84,6 +177,36 @@ const translations = {
         language: 'Language',
         vietnamese: 'Vietnamese',
         english: 'English',
+        menuFile: 'File',
+        menuEdit: 'Edit',
+        menuTools: 'Tools',
+        menuHelp: 'Help',
+        menuFileRefresh: 'Refresh data',
+        menuFileRefreshDesc: 'Reload the full protocol list',
+        menuFileGoogleSheet: 'Edit Google Sheet link',
+        menuFileGoogleSheetDesc: 'Open data-source settings',
+        menuFileEditSheet: 'Edit Google Sheet',
+        menuFileEditSheetDesc: 'Open spreadsheet in a new tab',
+        menuFileNewDesign: 'New design',
+        menuFileNewDesignDesc: 'Coming soon',
+        menuEditCopy: 'Copy',
+        menuEditCopyDesc: 'Copy the currently displayed protocol',
+        menuEditCopySource: 'Copy source',
+        menuEditCopySourceDesc: 'Copy the raw protocol source text',
+        menuEditClearDrafts: 'Clear drafts',
+        menuEditClearDraftsDesc: 'Remove all local drafts',
+        menuEditResetAll: 'Reset everything',
+        menuEditResetAllDesc: 'Clear local data and reload',
+        menuToolsLanguage: 'Language',
+        menuToolsLanguageDesc: 'Choose interface language',
+        menuToolsFontSize: 'Font size',
+        menuToolsFontSizeDesc: 'Adjust global font size',
+        menuHelpGuide: 'User guide',
+        menuHelpGuideDesc: 'Open documentation',
+        menuHelpShortcuts: 'Hotkeys',
+        menuHelpShortcutsDesc: 'Show keyboard shortcuts',
+        menuHelpAuthor: 'About the author',
+        menuHelpAuthorDesc: 'Details about Dr. Tran Quoc Hoai',
         close: 'Close',
         shortcutCopy: 'Copy current protocol (when no text is selected)',
         shortcutCopySource: 'Copy protocol source (raw source text)',
@@ -97,22 +220,55 @@ const translations = {
         clearAllDrafts: 'Clear All Drafts',
         clearAllDraftsDescription: 'Delete all saved drafts. Settings and original data will be preserved.',
         confirmClearDraftsTitle: 'Confirm Clear Drafts',
-        confirmClearDraftsMessage: 'Are you sure you want to delete all saved drafts? This action cannot be undone.'
+        confirmClearDraftsMessage: 'Are you sure you want to delete all saved drafts? This action cannot be undone.',
+        fontSizeDialogTitle: 'Font size',
+        fontSizeSampleLabel: 'Number & text drquochoai',
+        fontSizePresetSmall: 'Small',
+        fontSizePresetMedium: 'Medium',
+        fontSizePresetLarge: 'Large',
+        fontSizeHint: 'Use the slider or quick presets to update instantly.',
+        languageDialogTitle: 'Choose interface language',
+        languageDialogDescription: 'Changes apply immediately across the app.',
+        authorDialogTitle: 'About the author',
+        authorDialogDescription: 'Dr. Tran Quoc Hoai — thoracic surgeon and owner of the content.',
+        authorDialogSummary: 'Dr. Tran Quoc Hoai (Thoracic & Cardiovascular Surgery specialist) practices at Tam Anh General Hospital in Ho Chi Minh City, focusing on thoracic, cardiovascular, thyroid, and vascular procedures while actively applying technology and AI to patient care.',
+        authorDialogSpecialtiesTitle: 'Key expertise',
+        authorDialogSpecialtySurgery: 'Cardiothoracic surgery, thyroid surgery, and vascular emergency management.',
+        authorDialogSpecialtyVascular: 'Endovascular interventions, AVF creation, venous insufficiency treatment, aortic aneurysm repair.',
+        authorDialogSpecialtyInnovation: 'Researching and deploying AI-driven and digital tools to enhance diagnostics and treatment.',
+        authorDialogContactTitle: 'Direct contact',
+        authorDialogContactLocation: 'Cardiothoracic Department, Tam Anh General Hospital (Ho Chi Minh City).',
+        authorDialogPhoneLabel: 'Phone/Zalo',
+        authorDialogEmailLabel: 'Email',
+        authorDialogContactButton: 'View profile & contact',
+        helpLinkComingSoon: 'The help link will be provided soon.',
+        comingSoon: 'Feature coming soon.',
+        draftsClearedToast: 'Temporary data cleared. Reloading...',
+        appResetConfirmTitle: 'Reset all local data',
+        appResetConfirmMessage: 'Remove every locally stored setting (sources, drafts, config) and reload the app?',
+        appResetAction: 'Reset now',
+        appResetToast: 'All local data cleared. Reloading...',
+        languageUpdatedToast: 'Language updated.',
+        fontSizeUpdatedToast: 'Font size updated.',
+        authorDialogButton: 'Close',
+        versionTitle: 'Version title'
     }
 };
 
 function setLanguage(lang) {
     if (translations[lang]) {
-        currentLang.value = lang;
+        currentLang.value = lang
+        safeWriteLanguage(lang)
     }
 }
 
 function t(key) {
-    return translations[currentLang.value][key] || key;
+    return translations[currentLang.value][key] || key
 }
 
 export default {
     currentLang,
     setLanguage,
-    t
-};
+    t,
+    languageOptions
+}

@@ -29,17 +29,6 @@
             <button id="viewer-btn-fullscreen" class="viewer-icon-btn" @click.stop.prevent="$emit('toggle-fullscreen')"
               :title="t('toggleFullscreen')">⤢</button>
 
-            <!-- Language Switcher -->
-            <div class="lang-switcher" @mouseenter="showLangDropdown = true" @mouseleave="showLangDropdown = false">
-              <button id="viewer-lang-switch" class="viewer-icon-btn" :title="t('language')">
-                {{ currentLang === 'vi' ? '🇻🇳' : '🇺🇸' }}
-              </button>
-              <div id="viewer-lang-dropdown" v-if="showLangDropdown" class="lang-dropdown">
-                <div class="lang-option" @click="setLanguage('vi')">🇻🇳 Tiếng Việt</div>
-                <div class="lang-option" @click="setLanguage('en')">🇺🇸 English</div>
-              </div>
-            </div>
-
             <!-- Confirmation dialog (shown when user single-clicks reset) -->
             <ConfirmDialog v-if="showConfirm" :title="t('confirmResetTitle')" :message="t('confirmResetMessage')"
               :confirmText="t('reset')" :cancelText="t('cancel')" @confirm="onConfirmReset"
@@ -81,7 +70,7 @@ import { filterImagesByVariables } from '../services/imageService'
 
 import { useProtocolStore } from '../stores/protocolStore'
 
-const { t, currentLang, setLanguage } = languageService
+const { t, currentLang } = languageService
 
 const store = useProtocolStore()
 const props = defineProps({
@@ -107,7 +96,6 @@ const popupType = ref(null) // 'opt' | 'var' or null
 const activeVarName = ref(null)
 const saveTimer = ref(null)
 const showConfirm = ref(false)
-const showLangDropdown = ref(false)
 const editedVersionTitle = ref('')
 
 const availableImages = computed(() => {
@@ -737,52 +725,6 @@ onMounted(() => {
   background: #fff7f7;
   border-color: #fecaca;
   color: #b91c1c;
-}
-
-.lang-switcher {
-  position: relative;
-  display: inline-block;
-}
-
-.lang-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: #fff;
-  border: 1px solid #e6eef8;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  min-width: 120px;
-  overflow: visible;
-  /* Allow pseudo-element to be outside */
-  margin-top: 4px;
-}
-
-/* Invisible bridge to prevent mouseleave when moving from button to dropdown */
-.lang-dropdown::before {
-  content: '';
-  position: absolute;
-  top: -10px;
-  left: 0;
-  width: 100%;
-  height: 10px;
-  background: transparent;
-}
-
-.lang-option {
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 13px;
-  color: #334155;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.lang-option:hover {
-  background: #f8fafc;
-  color: #0f172a;
 }
 
 .protocols__editor-area {

@@ -1,3 +1,7 @@
+:root {
+  --app-font-size: 15px;
+}
+
 /* global styles */
 *,
 *::before,
@@ -11,4 +15,11 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
+}
+
+body {
+  font-size: var(--app-font-size);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f1f5f9;
+  color: #0f172a;
 }

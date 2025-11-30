@@ -61,17 +61,28 @@
 <script setup>
 import { ref, watch } from 'vue'
 import languageService from '../services/languageService'
-import draftService from '../services/draftService'
 import ConfirmDialog from './ConfirmDialog.vue'
+import appLifecycleService from '../services/appLifecycleService'
 
 const { t } = languageService
-const props = defineProps({ source: { type: String, default: '' }, edit: { type: String, default: '' } })
+const props = defineProps({
+  source: { type: String, default: '' },
+  edit: { type: String, default: '' },
+  initialTab: { type: String, default: 'general' }
+})
 const emit = defineEmits(['save', 'close'])
 
 const localSource = ref(props.source || '')
 const localEdit = ref(props.edit || '')
-const activeTab = ref('general')
+const activeTab = ref(props.initialTab || 'general')
 const showConfirmReset = ref(false)
+watch(
+  () => props.initialTab,
+  (tab) => {
+    if (tab && tab !== activeTab.value) activeTab.value = tab
+  }
+)
+
 
 // Auto-save watchers
 watch(localSource, (val) => {
@@ -102,15 +113,8 @@ function onClose() {
 }
 
 function doClearDrafts() {
-  try {
-    draftService.clearAllDrafts()
-    showConfirmReset.value = false
-    // Reload to reflect changes (cleared drafts)
-    window.location.reload()
-  } catch (e) {
-    console.error('Failed to clear drafts', e)
-    alert('Error clearing drafts')
-  }
+  showConfirmReset.value = false
+  appLifecycleService.clearDraftsAndReload()
 }
 </script>
 

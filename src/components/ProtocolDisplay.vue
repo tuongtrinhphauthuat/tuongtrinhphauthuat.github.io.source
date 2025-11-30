@@ -1,34 +1,36 @@
 <template>
-  <div class="protocols">
-    <Sidebar :protocols="store.protocols" :selectedId="store.selectedId" :selectedVersion="store.selectedVersion"
-      @select="onSelect" @refresh="onRefresh" @open-edit="openEditLink" @open-settings="showSettings = true" />
-    <div id="display-main-container" class="protocols__main">
-      <ProtocolViewer id="display-viewer-wrapper" ref="viewerRef" :current="current"
-        :selectedVersion="store.selectedVersion" :loading="store.loading" :error="store.error"
-        :draftHtml="viewerContentOverride" @copy="onCopy" @edited="onEdited" @reset="onViewerReset"
-        @toggle-fullscreen="toggleFullscreen" />
+  <div class="app-frame">
+    <MenuBar :items="menuItems" @select="handleMenuAction" />
+    <div class="protocols app-frame__body">
+      <Sidebar :protocols="store.protocols" :selectedId="store.selectedId" :selectedVersion="store.selectedVersion"
+        @select="onSelect" />
+      <div id="display-main-container" class="protocols__main">
+        <ProtocolViewer id="display-viewer-wrapper" ref="viewerRef" :current="current"
+          :selectedVersion="store.selectedVersion" :loading="store.loading" :error="store.error"
+          :draftHtml="viewerContentOverride" @copy="onCopy" @edited="onEdited" @reset="onViewerReset"
+          @toggle-fullscreen="toggleFullscreen" />
 
-      <LoadingProgress v-if="store.loading" />
+        <LoadingProgress v-if="store.loading" />
 
-      <!-- version popover removed -->
-
-      <!-- bottom menu moved here -->
-      <div id="display-bottom-bar" class="display__bottombar">
-        <button id="display-btn-copy" class="icon-btn" @click="doCopy" :title="t('copy')">{{ t('copy') }}</button>
-        <button id="display-btn-copy-source" class="icon-btn" @click="copySource" :title="t('copySource')">{{
-          t('copySource') }}</button>
-        <!-- manual save/version/autosave UI removed -->
-        <!-- Fullscreen moved into the viewer title-icons to reduce accidental clicks -->
-        <div id="display-status-text" style="margin-left:auto;color:#64748b">{{ versionsStatus }}</div>
+        <div id="display-bottom-bar" class="display__bottombar">
+          <button id="display-btn-copy" class="icon-btn" @click="doCopy" :title="t('copy')">{{ t('copy') }}</button>
+          <button id="display-btn-copy-source" class="icon-btn" @click="copySource" :title="t('copySource')">{{
+            t('copySource') }}</button>
+          <div id="display-status-text" style="margin-left:auto;color:#64748b">{{ versionsStatus }}</div>
+        </div>
       </div>
-
-      <!-- versions modal removed -->
     </div>
 
-    <!-- settings dialog component -->
-    <SettingsDialog v-if="showSettings" :source="store.sourceUrl" :edit="store.editUrl" @save="onSettingsSave"
-      @close="showSettings = false" />
+    <SettingsDialog v-if="showSettings" :source="store.sourceUrl" :edit="store.editUrl"
+      :initialTab="settingsInitialTab" @save="onSettingsSave" @close="showSettings = false" />
 
+    <LanguageDialog v-if="showLanguageDialog" :position="languageDialogPosition" @close="onLanguageDialogClose" />
+    <FontSizeDialog v-if="showFontSizeDialog" :position="fontDialogPosition" @close="onFontDialogClose" />
+    <AuthorDialog v-if="showAuthorDialog" @close="showAuthorDialog = false" />
+    <ShortcutsDialog v-if="showShortcutsDialog" @close="showShortcutsDialog = false" />
+    <ConfirmDialog v-if="confirmState.visible" :title="confirmTitle" :message="confirmMessage"
+      :confirmText="confirmPrimaryText" :cancelText="t('cancel')" @confirm="executeConfirmAction"
+      @cancel="confirmState.visible = false" />
     <Toast />
   </div>
 </template>
@@ -44,8 +46,21 @@ import Toast from './Toast.vue'
 import { useToastStore } from '../stores/toastStore'
 import SettingsDialog from './SettingsDialog.vue'
 import languageService from '../services/languageService'
+import MenuBar from './MenuBar.vue'
+import LanguageDialog from './LanguageDialog.vue'
+import FontSizeDialog from './FontSizeDialog.vue'
+import AuthorDialog from './AuthorDialog.vue'
+import ConfirmDialog from './ConfirmDialog.vue'
+import ShortcutsDialog from './ShortcutsDialog.vue'
+import menuService from '../services/menuService'
+import appLifecycleService from '../services/appLifecycleService'
 
 const { t } = languageService
+const menuItems = computed(() => {
+  // depend on current language so the tree re-renders when switching
+  languageService.currentLang.value
+  return menuService.getMenuTree(languageService.t)
+})
 
 const store = useProtocolStore()
 const viewerRef = ref(null)
@@ -55,6 +70,14 @@ const viewerContentOverride = ref(null)
 const versionsStatus = ref('')
 const isFullscreen = ref(false)
 const toastStore = useToastStore()
+const showLanguageDialog = ref(false)
+const showFontSizeDialog = ref(false)
+const showAuthorDialog = ref(false)
+const showShortcutsDialog = ref(false)
+const languageDialogPosition = ref({ x: 140, y: 64 })
+const fontDialogPosition = ref({ x: 220, y: 80 })
+const confirmState = ref({ visible: false, type: null })
+const settingsInitialTab = ref('general')
 
 onMounted(() => {
   store.fetchProtocols()
@@ -239,6 +262,143 @@ function onSettingsSave(payload) {
     console.error('onSettingsSave', err)
   }
 }
+
+function handleMenuAction(payload) {
+  const action = payload?.action
+  const coords = payload?.coords
+  switch (action) {
+    case 'open-data-settings':
+      settingsInitialTab.value = 'general'
+      showSettings.value = true
+      break
+    case 'open-new-design':
+      toastStore.addToast(t('comingSoon'), 'info')
+      break
+    case 'clear-drafts':
+      openConfirm('clear-drafts')
+      break
+    case 'reset-app':
+      openConfirm('reset-app')
+      break
+    case 'open-language-dialog':
+      hideFloatingDialogs()
+      languageDialogPosition.value = computeFloatingPosition(coords)
+      showLanguageDialog.value = true
+      break
+    case 'open-fontsize-dialog':
+      hideFloatingDialogs()
+      fontDialogPosition.value = computeFloatingPosition(coords)
+      showFontSizeDialog.value = true
+      break
+    case 'open-help-link':
+      openHelpLink()
+      break
+    case 'open-author-dialog':
+      hideFloatingDialogs()
+      showAuthorDialog.value = true
+      break
+    case 'open-shortcuts-dialog':
+      openShortcutsDialog()
+      break
+    case 'open-edit-sheet':
+      openEditLink()
+      break
+    case 'copy-protocol':
+      hideFloatingDialogs()
+      doCopy()
+      break
+    case 'copy-source':
+      hideFloatingDialogs()
+      copySource()
+      break
+    case 'refresh-protocols':
+      onRefresh()
+      break
+    default:
+      break
+  }
+}
+
+function openShortcutsDialog() {
+  hideFloatingDialogs()
+  showAuthorDialog.value = false
+  nextTick(() => {
+    showShortcutsDialog.value = true
+  })
+}
+
+function hideFloatingDialogs() {
+  showLanguageDialog.value = false
+  showFontSizeDialog.value = false
+  showShortcutsDialog.value = false
+}
+
+function computeFloatingPosition(coords) {
+  const fallbackX = typeof window !== 'undefined' ? window.innerWidth / 2 : 200
+  const fallbackY = 70
+  return {
+    x: Math.max(24, coords?.x ?? fallbackX),
+    y: Math.max(60, coords?.y ?? fallbackY)
+  }
+}
+
+function openHelpLink() {
+  const url = menuService.getHelpLink()
+  if (url) {
+    try {
+      window.open(url, '_blank', 'noopener')
+    } catch (err) {
+      console.error('Unable to open help link', err)
+    }
+  } else {
+    toastStore.addToast(t('helpLinkComingSoon'), 'info')
+  }
+}
+
+const confirmTitle = computed(() => {
+  if (confirmState.value.type === 'reset-app') return t('appResetConfirmTitle')
+  if (confirmState.value.type === 'clear-drafts') return t('confirmClearDraftsTitle')
+  return ''
+})
+
+const confirmMessage = computed(() => {
+  if (confirmState.value.type === 'reset-app') return t('appResetConfirmMessage')
+  if (confirmState.value.type === 'clear-drafts') return t('confirmClearDraftsMessage')
+  return ''
+})
+
+const confirmPrimaryText = computed(() => {
+  if (confirmState.value.type === 'reset-app') return t('appResetAction')
+  if (confirmState.value.type === 'clear-drafts') return t('clearAllDrafts')
+  return ''
+})
+
+function openConfirm(type) {
+  confirmState.value = { visible: true, type }
+}
+
+function executeConfirmAction() {
+  const action = confirmState.value.type
+  confirmState.value.visible = false
+  if (action === 'clear-drafts') {
+    toastStore.addToast(t('draftsClearedToast'), 'success')
+    appLifecycleService.clearDraftsAndReload()
+  } else if (action === 'reset-app') {
+    toastStore.addToast(t('appResetToast'), 'success')
+    appLifecycleService.resetAllLocalState()
+  }
+}
+
+function onLanguageDialogClose(payload) {
+  showLanguageDialog.value = false
+  if (payload?.reason === 'selected') {
+    toastStore.addToast(t('languageUpdatedToast'), 'success')
+  }
+}
+
+function onFontDialogClose() {
+  showFontSizeDialog.value = false
+}
 </script>
 
 <style scoped>
@@ -264,6 +424,14 @@ function onSettingsSave(payload) {
 .protocols__search {
   margin-bottom: 12px;
   flex-shrink: 0
+}
+
+.app-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: #f1f5f9;
 }
 
 .protocols__input {
@@ -457,5 +625,12 @@ function onSettingsSave(payload) {
   font-size: 12px;
   color: #475569;
   margin-top: 8px
+}
+
+.app-frame__body {
+  flex: 1;
+  display: flex;
+  height: 100%;
+  min-height: 0;
 }
 </style>
