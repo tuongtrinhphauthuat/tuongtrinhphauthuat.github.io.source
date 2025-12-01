@@ -122,6 +122,54 @@ export function parseImageRows(raw, { idPrefix = 'img', startIndex = 0 } = {}) {
   return out
 }
 
+export function mergeImageHyperlinks(raw, hyperlinks = []) {
+  if (!Array.isArray(hyperlinks) || hyperlinks.length === 0) return raw
+  const uniqueTargets = Array.from(new Set(hyperlinks.map(stripTrailingNoise))).filter(Boolean)
+  if (!uniqueTargets.length) return raw
+
+  const base = raw == null ? '' : String(raw)
+  const existingLower = base.toLowerCase()
+  const candidateLines = base
+    ? base
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean)
+    : []
+
+  let lineCursor = 0
+  const appended = []
+
+  uniqueTargets.forEach(target => {
+    if (!isImageUrl(target)) return
+    if (existingLower && existingLower.includes(target.toLowerCase())) return
+
+    let description = ''
+    if (candidateLines.length) {
+      let found = false
+      while (lineCursor < candidateLines.length) {
+        const candidate = candidateLines[lineCursor++]
+        if (!candidate) continue
+        if (/https?:\/\//i.test(candidate)) continue
+        description = candidate
+        found = true
+        break
+      }
+      if (!found) {
+        const fallback = candidateLines[candidateLines.length - 1]
+        if (fallback && !/https?:\/\//i.test(fallback)) {
+          description = fallback
+        }
+      }
+    }
+
+    const combined = [description, target].filter(Boolean).join(' ').trim()
+    appended.push(combined || target)
+  })
+
+  if (!appended.length) return raw
+  return base ? `${base}\n${appended.join('\n')}` : appended.join('\n')
+}
+
 function equalsIgnoreCase(a, b) {
   if (a == null || b == null) return false
   return String(a).trim().localeCompare(String(b).trim(), undefined, { sensitivity: 'base' }) === 0

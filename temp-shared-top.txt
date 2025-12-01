@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="639" uniqueCount="544"><si><t>STT</t></si><si><t>Tên</t></si><si><t>Hình ảnh</t></si><si><t>Nội dung 1</t></si><si><t>Nội dung 2</t></si><si><t>Nội dung 3</t></si><si><t>Nội dung 4</t></si><si><t>Nội dung 5</t></si><si><t>Nội dung 6</t></si><si><t>Laser tĩnh mạch (EVLA)</t></si><si><t>(#Mask, Kim Hòa Phát, ✅Muller) Bệnh nhân nằm ngửa. [Gây mê mask thanh quản*/Gây tê tại chỗ bằng lidocain 2%/Gây mê nội khí quản]. [Sử dụng máy NEOV1470, và “Ống thông (dây đốt) Laser Corona 360, G.N.S NeoLaser Ltd”.*/Bộ dụng cụ đốt laser nội mạch Nevertouch Direct (Angiodynamics)]
+[Sử dụng nước muối sinh lý làm dung dịch tách.*/Pha thuốc tê:
+- Natri Clorid 0.9% 1000ml x 1 chai
+- Adrenaline 1mg//1ml x 1 ống
+- Natri Bicarbonate 8.4% 10ml x 1 ống
+- Licocain 200mg//10ml x 2 ống]
+* Tĩnh mạch hiển lớn bên trái:
+Trên siêu âm xác định vị trí tĩnh mạch hiển lớn đoạn cẳng chân
+Đặt Sheath 4F vào lòng tĩnh mạch hiển lớn bằng kỹ thuật Seldinger.
+Luồn dây laser vào lòng tĩnh mạch đến vị trí đổ của tĩnh mạch hiển lớn vào tĩnh mạch đùi, kéo đầu dây laser về cách chỗ đổ tĩnh mạch hiển - đùi 2cm.
+Bơm nước tê đã pha dọc theo tĩnh mạch hiển lớn để tách tĩnh mạch hiển lớn ra khỏi mô xung quanh đoạn trên gối.
+Tiến hành đốt laser ngắt quãng mỗi 1cm, công suất 40J.
+Rút sheath, băng ép cầm máu.
+[- Muller: Rạch da 3-5mm phía trên các búi dãn tĩnh mạch, dùng Mosquito bóc tách để rút bỏ phần lớn các tĩnh mạch dãn đã đánh dấu trước đó. Đè ép cầm máu, khâu da với Nylon 3-0.]
+- Tĩnh mạch hiển lớn bên phải: thực hiện tương tự
+Băng ép có trọng điểm các vị trí chích kim, mang vớ áp lực tĩnh mạch, kết thúc phẫu thuật.</t></si><si><t>(#Mask, Kim Hòa Phát, ❌ Muller)
+(*Nội dung 1)
+[*- Muller: Rạch da 3-5mm phía trên các búi dãn tĩnh mạch, dùng Mosquito bóc tách để rút bỏ phần lớn các tĩnh mạch dãn đã đánh dấu trước đó. Đè ép cầm máu, khâu da với Nylon 3-0.]</t></si><si><t>(#Mask, Anpha, ✅Muller) 
+(*Nội dung 1) [Bộ dụng cụ đốt laser nội mạch Nevertouch Direct (Angiodynamics)*]</t></si><si><t>(#Mask, Anpha, ❌Muller) Bệnh nhân nằm ngửa. [Gây mê mask thanh quản*/Gây tê tại chỗ bằng lidocain 2%/Gây mê nội khí quản]. [Sử dụng máy NEOV1470, và “Ống thông (dây đốt) Laser Corona 360, G.N.S NeoLaser Ltd”./Bộ dụng cụ đốt laser nội mạch Nevertouch Direct (Angiodynamics)*]
+[Sử dụng nước muối sinh lý làm dung dịch tách.*/Pha thuốc tê:
+- Natri Clorid 0.9% 1000ml x 1 chai
+- Adrenaline 1mg//1ml x 1 ống
+- Natri Bicarbonate 8.4% 10ml x 1 ống
+- Licocain 200mg//10ml x 2 ống]
+* Tĩnh mạch hiển lớn bên trái:
+Trên siêu âm xác định vị trí tĩnh mạch hiển lớn đoạn cẳng chân
+Đặt Sheath 4F vào lòng tĩnh mạch hiển lớn bằng kỹ thuật Seldinger.
+Luồn dây laser vào lòng tĩnh mạch đến vị trí đổ của tĩnh mạch hiển lớn vào tĩnh mạch đùi, kéo đầu dây laser về cách chỗ đổ tĩnh mạch hiển - đùi 2cm.
+Bơm nước tê đã pha dọc theo tĩnh mạch hiển lớn để tách tĩnh mạch hiển lớn ra khỏi mô xung quanh đoạn trên gối.
+Tiến hành đốt laser ngắt quãng mỗi 1cm, công suất 40J.
+Rút sheath, băng ép cầm máu.
+[*- Muller: Rạch da 3-5mm phía trên các búi dãn tĩnh mạch, dùng Mosquito bóc tách để rút bỏ phần lớn các tĩnh mạch dãn đã đánh dấu trước đó. Đè ép cầm máu, khâu da với Nylon 3-0.]
+- Tĩnh mạch hiển lớn bên phải: thực hiện tương tự
+Băng ép có trọng điểm các vị trí chích kim, mang vớ áp lực tĩnh mạch, kết thúc phẫu thuật.</t></si><si><t>Cắt thùy phổi do u</t></si><si><t>(#Thùy trên, trái, +ICG) Bệnh nhân mê nội phế quản.
+Tư thế: phẫu thuật bên [$ben$=trái/phải], nằm nghiêng đối bên, kê gối dưới ngực, chân dưới co, chân trên duỗi, cố định chắc tư thế trên giường mổ. Vào ngực qua các trocar:
+- 1 trocar [Ethicon ENDOPATH XCEL™ Trocars 12mm] KLS 8 nách sau;
+- 1 trocar 10mm KLS 6 nách trước;
+- 1 trocar 5mm KLS 5 nách trước;
+Ghi nhận: 
+- Màng phổi: [không có dịch/có dịch vàng trong], [trơn láng/có nhiều nốt].
+[- Tiêm ICG]
+- Khối u nằm ở thùy [$thuy$=trên/dưới/giữa] phổi $ben$, co rúm màng phổi tạng, tăng sinh mạch máu.
+Tiến hành cắt wedge u bằng Stapler cắt phổi.
+Gửi sinh thiết lạnh. Chờ → Kết quả sinh thiết lạnh: Ung thư biểu mô tuyến xâm nhập.
+Quyết định cắt thùy $thuy$ phổi $ben$.
+Tiến hành bóc dính nhu mô phổi, tĩnh mạch phổi, động mạch phổi và phế quản thùy $thuy$ phổi $ben$ bằng [dao siêu âm HARMONIC (Ethicon)/ Ligasure].
+Cắt động mạch, tĩnh mạch và phế quản thùy bằng các staplers (Covidien Medtronic), bao gồm:
+[Băng ghim cắt khâu Endo GIA Articulating Reload công nghệ Tri-Staple] [và Băng ghim nội soi công nghệ tristaple có 3 hàng ghim chiều cao khác nhau mỗi bên] [và Băng ghim cắt khâu nối nội soi đầu cong Endo GIA Curved Tip Articulating Reload công nghệ Tri-Staple] với tay súng là [Dụng cụ cắt khâu nối tự động Endo GIA Ultra Universal/Dụng cụ cắt khâu nối thẳng tự động thông minh Signia].
+* Tổng cộng: [2/3/4/5/6*/7/8/9/10/11/12] cái các loại.
+Nạo hạch trung thất $ben$ số: 4, 5, 7, 8, 9, 10, 11
+Lấy mẫu bệnh phẩm bằng túi.
+Rửa và Kiểm tra lại thấy nhu mô phổi còn lại nở tốt, không xì khí
+Cầm máu phẫu trường và chân trocar.
+Đặt 1 ống dẫn lưu màng phổi $ben$ số [24/20/28/32]F sử dụng [Bộ dẫn lưu ngực cỡ 2300ml Biometrix]
+Đóng vết mổ theo lớp.
+Kết thúc phẫu thuật.</t></si><si><t>(#Thùy dưới, trái, +ICG)
+(*Nội dung 1)
+[$ben$=trái]
+[$thuy$=dưới]</t></si><si><t>(#Thùy trên, phải, +ICG)
+(*Nội dung 1)
+[$ben$=phải]
+[$thuy$=trên]</t></si><si><t>(#Thùy giữa, phải, +ICG)
+(*Nội dung 1)
+[$ben$=phải]
+[$thuy$=giữa]</t></si><si><t>(#Thùy dưới, phải, +ICG)
+(*Nội dung 1)
+[$ben$=phải]
+[$thuy$=dưới]</t></si><si><t>Động mạch cảnh (CEA)</t></si><si><r><rPr><color rgb="FF1155CC"/><u/></rPr><t>abc</t></r><r><rPr/><t xml:space="preserve">
+xyz
+</t></r><r><rPr><color rgb="FF1155CC"/><u/></rPr><t xml:space="preserve">jsdj
+</t></r><r><rPr/><t>https://i.imgur.com/LetjM6p.png [$b$=trái]</t></r></si><si><t>(#Trái)
+Bệnh nhân nằm ngửa, [gây mê nội khí quản/gây tê đám rối cổ nông], ngửa cổ.
+[Dán 2 miếng điện cực theo dõi độ bão hòa oxy não.]
+Rạch da [6/8*/10]cm bờ trước cơ ức đòn chũm [$b$=trái/phải].
+Bộc lộ động mạch cảnh chung, trong, ngoài bên $b$.
+Động mạch cảnh từ cảnh ngoài tới cảnh trong thành xơ vữa nhiều, hẹp từ ngay chỗ chia tới 15mm về phía động mạch cảnh trong.
+Mở dọc thành trước ĐM cảnh chung qua cảnh trong. Thấy lòng mạch vị trí hẹp xơ vữa vôi hóa nhiều, mức độ hẹp như trên cắt lớp vi tính trước mổ.
+Duy trì huyết áp tâm thu &gt;=140mmHg, theo dõi Oxy não bằng NIRS ổn định trong thời gian thao tác xử lý chỗ hẹp, SrO2 giảm &lt;20% so với baseline (từ 75mmHg xuống 71mmHg) trong suốt quá trình kẹp động mạch cảnh.
+Tiến hành bóc nội mạc động mạch cảnh trong bên $b$ đoạn xa thấy rõ nội mạc lành.
+Bơm rửa nội mạc với heparin pha nước tại chỗ sạch sẽ. Bóc xơ vữa đoạn động mạch cảnh chung tương tự. Khâu đính nội mạc ĐM cảnh phía trên và dưới.
+Tiến hành mở rộng động mạch cảnh trong và chung bằng miếng vá màng ngoài tim 2x9cm bằng chỉ prolene 6.0
+Sau khâu nối cầm máu tốt. Đặt 01 ODL áp lực âm vết mổ.
+Khâu cơ, khâu da các lớp.</t></si><si><t>(#Phải)
+(*Nội dung 1)
+[$b$=phải].</t></si><si><t>Cắt tuyến giáp</t></si><si><t>I. CHUẨN BỊ VÀ THIẾT LẬP
+- Vô cảm: gây mê nội khí quản.
+- Tư thế: bệnh nhân nằm ngửa cổ, vai kê gối, cổ ưỡn tối đa.
+- Sát trùng: sát trùng vùng cổ, ngực trên.
+- Trải săng: trải săng vô trùng vùng phẫu thuật.
+II. TIẾN HÀNH PHẪU THUẬT
+- Đường mổ: rạch da 6cm theo nếp lằn cổ cách khuyết ức 2cm.
+- Cắt cơ bám da cổ, vào dọc giữa bó cơ trap.
+- Ghi nhận trên đại thể:
+⠀+ Thùy [$b$=Trái/Phải]: có nhân tương tự trên siêu âm; xâm lấn: [không/vỏ bao/cơ ức-giáp/thực quản/khí quản].
+⠀+ Thùy còn lại: [không sờ thấy nhân/sờ thấy nhân nhỏ]; xâm lấn: [không/vỏ bao/cơ ức-giáp/thực quản/khí quản].
+⠀+ Hạch cổ: [không thấy hạch trên đại thể/có hạch nhóm VI lớn nghĩ di căn].
+- Tiến hành cắt lạnh (Sinh thiết lạnh):
+⠀+ Mẫu sinh thiết lạnh: [$stl$=Thùy $b$/Thùy $b$ và eo/Thùy $b$ và hạch cổ/Thùy $b$ và eo và hạch cổ/Eo tuyến giáp/Hạch cổ].
+⠀+ Kết quả cắt lạnh: [$kqstl$=Ung thư biểu mô nhú/Ung thư biểu mô tuyến/Phình giáp/Không rõ ràng/Chuyển mẫu chờ kết quả giải phẫu bệnh thường].
+⠀+ Quyết định phẫu thuật tiếp theo: [Cắt toàn bộ tuyến giáp/Cắt một thùy và eo tuyến giáp/Ngừng phẫu thuật và chờ kết quả giải phẫu bệnh thường].
+- Tiến hành cắt tuyến giáp:
+⠀+ Cắt động mạch giáp trên, giáp giữa, các tĩnh mạch tuyến giáp bằng dao [Dao siêu âm HARMONIC FOCUS (kèm theo Dây dao siêu âm HPBLUE)/LIGASURE/Dao đốt điện lưỡng cực]: thuận lợi.
+⠀+ Tiến hành cắt [toàn bộ tuyến giáp hai bên/một thùy và eo tuyến giáp/gần toàn bộ tuyến giáp hai bên] theo quyết định sau cắt lạnh.
+- Bảo tồn dây thần kinh và tuyến cận giáp:
+⠀+ Dây thần kinh quặc ngược thanh quản: hai bên thấy rõ, bóc tách thuận lợi. [*Giám sát thần kinh liên tục].
+⠀+ Tuyến cận giáp: thấy rõ [02/03/04] tuyến cận giáp. [*Cấy lại [01/02/03/04] tuyến cận giáp vào cơ ức đòn chũm].
+- Nạo hạch: [không ghi nhận hạch trên đại thể/ bóc hạch nhóm VI hai bên: ở phía trên của thần kinh quặc ngược thanh quản/Nạo hạch cổ nhóm: VI, V].
+III. KẾT THÚC VÀ ĐÓNG VẾT MỔ
+- Kiểm tra cầm máu: rửa nước, cầm máu vết mổ tốt. Đặt [BloodStop cầm máu giường vết mổ tăng cường/Surgicel/Gelatin sponge].
+- Trám chống dính: [trám các vùng vết mổ với Gel chống dính Singclean/Không sử dụng chống dính].
+- Dẫn lưu: [áp lực âm vết mổ/không/ống dẫn lưu Penrose].
+- Đóng vết mổ:
+⠀+ Khâu lớp cơ trap, khâu cơ bám da cổ với [Vicryl 3-0/Polydioxanone 3-0].
+⠀+ Khâu dưới da, khâu trong da với [Vicryl rapid 4-0/Monocryl 4-0].
+- Kết thúc phẫu thuật.</t></si><si><t>Robot cắt thùy phổi</t></si><si><t>I. CHUẨN BỊ &amp; THIẾT LẬP
+- Sử dụng hệ thống Robot Da Vinci.
+- Vô cảm: Bệnh nhân mê nội phế quản.
+- Tư thế: Phẫu thuật bên [$ben$=trái/phải], nằm nghiêng đối bên, kê gối dưới ngực, chân dưới co, chân trên duỗi, cố định chắc tư thế trên giường mổ.
+- Đường vào: Vào ngực qua các trocar.
+⠀+ Trocar 1: [Ethicon ENDOPATH XCEL™ Trocars 12mm] đặt ở KLS 9 nách giữa.
+⠀+ Trocar 2, 3, 4, 5: 04 trocar 8mm đặt lần lượt ở KLS 7 giữa đòn, nách trước, nách sau, bả vai, cách nhau 8-10cm.
+- Docking dụng cụ:
+[⠀+ Fenestrated bipolar forceps]
+[⠀+ Curved bipolar dissector]
+[⠀+ ProGrasp™ forceps]
+II. QUAN SÁT &amp; ĐÁNH GIÁ TỔN THƯƠNG
+- Ghi nhận:
+⠀+ Màng phổi: [không có dịch/có dịch vàng trong], [trơn láng/có nhiều nốt].
+⠀+ Tiến hành tiêm ICG (Indocyanine Green) để định vị u.
+⠀+ Khối u nằm ở thùy [$thuy$=trên/dưới/giữa] phổi $ben$, có đặc điểm co rúm màng phổi tạng, tăng sinh mạch máu.
+III. CẮT U &amp; SINH THIẾT LẠNH
+- Tiến hành cắt wedge (cắt hình chêm) khối u bằng Stapler cắt phổi.
+- Gửi sinh thiết lạnh.
+- Nạo hạch trung thất trái các nhóm số: 5, 7, 8, 9, 10, 11, 12.
+- Kết quả sinh thiết lạnh: Ung thư biểu mô tuyến.
+- Quyết định: Cắt thùy $thuy$ phổi $ben$.
+IV. TIẾN HÀNH CẮT THÙY PHỔI
+- Tiến hành bóc dính nhu mô phổi, tĩnh mạch phổi, động mạch phổi và phế quản thùy $thuy$ thuận lợi.
+- Cắt động mạch, tĩnh mạch và phế quản thùy $thuy$ bằng các dụng cụ [Staplers (Covidien Medtronic)].
+⠀+ Tay súng sử dụng: [Dụng cụ cắt khâu nối tự động Endo GIA Ultra Universal/Dụng cụ cắt khâu nối tự động Signia™ Stapling].
+⠀+ Băng ghim sử dụng:
+⠀⠀● [Băng ghim cắt khâu Endo GIA Articulating Reload công nghệ Tri-Staple].
+⠀⠀● [Băng ghim nội soi công nghệ tristaple (có 3 hàng ghim chiều cao khác nhau mỗi bên)].
+⠀⠀● [Băng ghim cắt khâu nối nội soi đầu cong Endo GIA Curved Tip Articulating Reload công nghệ Tri-Staple].
+- Tổng số lượng băng ghim các loại: [04/05/06/07/08/09/10/11] cái.
+- Lấy mẫu bệnh phẩm bằng túi chứa bệnh phẩm.
+V. KẾT THÚC &amp; ĐÓNG VẾT MỔ
+- Undocking: Các dụng cụ và trocar được tháo ra thuận lợi.
+- Kiểm tra cầm máu và xì khí:
+⠀+ Rửa và Kiểm tra lại thấy nhu mô phổi còn lại nở tốt, không xì khí.
+⠀+ Cầm máu các vị trí chảy máu và chân trocar.
+- Dẫn lưu:
+⠀+ Đặt 1 ống dẫn lưu màng phổi trái số [24/28]F sử dụng [Bộ dẫn lưu ngực cỡ 2300ml].
+- Đóng vết mổ: Đóng vết mổ theo lớp giải phẫu.
+- Kết thúc phẫu thuật.</t></si><si><t>Bắc cầu động mạch đùi - đùi, mạch máu</t></si><si><t>I. CHUẨN BỊ VÀ THIẾT LẬP
+- Vô cảm: Bệnh nhân mê nội khí quản.
+- Tư thế: Bệnh nhân nằm ngửa.
+- Đặt các đường theo dõi: Đặt huyết áp động mạch xâm lấn, đường truyền tĩnh mạch trung tâm.
+- Định vị: Xác định động mạch đùi chung trên siêu âm trước mổ, đánh dấu vị trí.
+- Theo dõi: Theo dõi SrO2 ở bàn chân phải và cẳng chân trái. Ghi nhận SrO2 trung bình trước mổ: bên trái [$SrO2_trai_truoc$=53/55/58]% và bên phải [$SrO2_phai_truoc$=62/65/68]%.
+II. PHẪU THUẬT VÀ TẠO ĐƯỜNG NỐI
+- Đường vào: Rạch da dọc bẹn 2 bên dài ~[8/10/12]cm.
+- Bộc lộ mạch máu: Bộc lộ động mạch đùi chung, động mạch đùi nông và động mạch đùi sâu hai bên.
+- ĐM đùi chung phải: Thành mạch [mềm mại/xơ cứng nhẹ], [không viêm/viêm nhẹ] xung quanh, bóc tách [dễ dàng/khó khăn].
+- ĐM đùi chung trái: Thành mạch [mềm mại/xơ cứng nhẹ], lòng [cứng chắc/mềm mại], viêm [nhẹ/vừa/nhiều] mô xung quanh, bóc tách [dễ dàng/khó khăn].
+- Tạo đường hầm: Tạo đường hầm trên xương mu.
+- Chống đông: Tiêm Heparin tĩnh mạch [5000/7000/10000] đơn vị.
+- Mở ĐM đùi chung bên phải: Ghi nhận thành mạch [mềm mại/xơ vữa nhẹ], flow back của ĐM đùi, ĐM đùi sâu và các nhánh [tốt/trung bình/kém]. Inflow ĐM đùi chung [tốt/trung bình/kém].
+- Nối ĐM phải: Sử dụng ống ghép [ePTFE 7mm/Dacron 6mm/Ống ghép khác], nối tận bên vào ĐM đùi chung phải bằng Prolene [6-0/5-0]. Sau khâu nối cầm máu [tốt/còn rỉ máu nhẹ].
+- Mở ĐM đùi chung bên trái: Ghi nhận thành mạch [mềm mại/xơ vữa nhẹ]. Phát hiện huyết khối [mới/cũ] ở ĐM đùi chung lan đến chỗ xuất phát của ĐM đùi kéo dài đoạn [6/8/10]mm, và lan đến 1 nhánh của ĐM đùi sâu (kích thước [2.5/3/3.5]mm) đoạn dài [15/20/25]mm.
+- Lấy huyết khối: Lấy huyết khối bằng bóng Forgaty [dễ dàng/khó khăn]. Sau khi lấy huyết khối thấy dòng flowback ở ĐM đùi [tốt/trung bình/kém], nhánh lớn đùi sâu [3.5/4/5]mm flowback [tốt/trung bình/kém], và nhánh nhỏ [2.5/3/3.5]mm flowback [trung bình/kém].
+- Bơm ngậm heparin: Bơm ngậm heparin ở các nhánh mạch máu.
+- Nối ĐM trái: Nối tận bên đầu còn lại của ống ghép vào đường mở động mạch đùi chung bằng Prolene [6-0/5-0]. Sau khâu nối cầm máu [tốt/còn rỉ máu nhẹ].
+III. HOÀN TẤT VÀ KIỂM TRA
+- Cầm máu tăng cường: Đặt các [Surgicel/Gelatin sponge/Fibrin sealant] vào các miệng nối để cầm máu tăng cường. Cầm máu vết mổ.
+- Chụp mạch kiểm tra: Đặt sheath [4F/5F] ngược dòng vào ĐM đùi chung phải. Sử dụng C-Arm chụp các miệng nối ĐM đùi chung phải - ống ghép - ĐM đùi chung trái thấy dòng máu lưu thông [nhanh, mạnh/trung bình]. Chụp từng đoạn của ĐM đùi trái đến cung bàn chân thấy dựng hình được ĐM [chày trước/chày sau/cả hai] ở cung bàn chân.
+- Dẫn lưu: Đặt [02/01] ống dẫn lưu áp lực âm ở mỗi vết mổ bẹn.
+- Kiểm tra: Kiểm tra không chảy máu.
+- Theo dõi sau mổ: SrO2 ở 2 bàn chân sau mổ, bên trái [$SrO2_trai_sau$=57-59/60-62/63-65]% và bên phải [$SrO2_phai_sau$=60-62/63-65/66-68]%.
+- Đóng vết mổ: Đóng vết mổ, khâu da theo các lớp.
+- Kết thúc phẫu thuật.</t></si><si><t>Nối thông động tĩnh mạch để lọc máu (AVF, FAV)</t></si><si><t>(#ĐM quay - đầu)
+I. CHUẨN BỊ VÀ THIẾT LẬP
+- Vô cảm: [Gây tê tại chỗ bằng lidocain 2%/Gây mê mask thanh quản/Gây mê nội khí quản].
+- Tư thế: bệnh nhân nằm ngửa.
+- Vị trí: tạo cầu nối thông động tĩnh mạch ([$dm_chinh$=quay/cánh tay/trụ] - [$tm_chinh$=đầu/nền]) [$bên$=trái/phải].
+- Vị trí phẫu thuật: rạch da [1//3 dưới cẳng tay/khuỷu tay/1//3 giữa cẳng tay] $bên$.
+II. TIẾN HÀNH PHẪU THUẬT
+- Rạch da, bóc tách và bộc lộ tĩnh mạch:
+⠀+ Bộc lộ tĩnh mạch $tm_chinh$ dễ dàng, thấy tĩnh mạch thành [mềm mại/xơ cứng], kích thước ~[$kt_tm$=2.5/3.0/3.5/4]mm.
+⠀+ Cắt đầu dưới tĩnh mạch $tm_chinh$ bên $bên$, buộc lại bằng [Silk 3-0/Silk 2-0/Vicryl 2-0].
+⠀+ Đầu trên bơm rửa với nước muối sinh lý pha heparin nhẹ tay.
+- Bóc tách và bộc lộ động mạch:
+⠀+ Bộc lộ động mạch $dm_chinh$ ở vị trí tương ứng, thành mạch [mềm mại/xơ vữa nhẹ/xơ cứng], kích thước ~[$kt_dm$=2.5/3.0/3.5/4]mm.
+- Tiến hành nối thông động tĩnh mạch:
+⠀+ Tiến hành mở động mạch $dm_chinh$ đoạn dài ~[$doan_mo_dm$=10/12/15]mm.
+⠀+ Nối tận bên tĩnh mạch $tm_chinh$ vào động mạch $dm_chinh$ với [Prolene 8-0/Prolene 7-0/Ethilon 8-0] mũi liên tục ([parachute technique/mũi đơn độc lập]).
+⠀+ Sau khâu nối cầm máu kỹ miệng nối.
+- Kiểm tra:
+⠀+ Kiểm tra điều chỉnh đường đi của tĩnh mạch về.
+⠀+ Thấy rung miu từ miệng nối kéo dài lên trên một đoạn [$doan_rung_miew$=5/10/15]cm.
+III. KẾT THÚC VÀ ĐÓNG VẾT MỔ
+- Cầm máu vết mổ kỹ.
+- Khâu da với [Nylon 3-0/Ethilon 3-0].
+- Kết thúc cuộc mổ.</t></si><si><t>(#ĐM cánh tay - đầu) (*Nội dung 1)
+ [$dm_chinh$=cánh tay] [khuỷu tay]</t></si><si><t>Tiêm xơ tĩnh mạch, chích xơ</t></si><si><r><rPr><color rgb="FF1155CC"/><u/></rPr><t>https://i.imgur.com/xtZV4C6.png
+https://i.imgur.com/LetjM6p.png</t></r><r><rPr/><t xml:space="preserve"> [$ben$=trái]
+[$ben$=phải] </t></r><r><rPr><color rgb="FF1155CC"/><u/></rPr><t xml:space="preserve">https://i.imgur.com/9bC6MA6.png
+</t></r><r><rPr/><t xml:space="preserve">[$ben$=hai bên] </t></r><r><rPr><color rgb="FF1155CC"/><u/></rPr><t>https://i.imgur.com/rhNUkAh.png</t></r></si><si><t>I. THIẾT LẬP VÀ CHUẨN BỊ
+Thủ thuật: tiêm xơ tĩnh mạch bằng bọt (Foam Sclerotherapy).
+Vô cảm: không.
+Tư thế: bệnh nhân nằm [ngửa/nghiêng] tại giường.
+Bên thực hiện: chân [$ben$=hai bên/trái/phải].
+Sát khuẩn: [Povidone Iodine/Cồn 70 độ/Dung dịch Chlorhexidine] tại các vùng cần can thiệp.
+II. PHA VÀ TẠO BỌT XƠ HÓA
+Pha dung dịch xơ hóa: tạo bọt nhuyễn qua chạc ba.
+⠀⠀+ Thành phần thuốc:
+⠀⠀⠀● Thuốc xơ hóa: [Aetoxisclerol 2% 2ml/Polidocanol 1% 1ml].
+⠀⠀⠀● Dung dịch pha loãng: [Nước cất 2ml/Nước muối sinh lý 2ml].
+⠀⠀⠀● Không khí: tạo bọt với tổng thể tích [8ml/6ml/4ml].
+III. TIẾN HÀNH THỦ THUẬT
+Dụng cụ: sử dụng bơm tiêm [5mL/1mL/10mL] với kim [30G/26G/27G] để bơm thuốc vào lòng tĩnh mạch.
+Vị trí can thiệp: tiêm vào các tĩnh mạch [mạng nhện/dãn nhỏ dưới da/hiển lớn còn sót].
+Quá trình thủ thuật thuận lợi, không biến chứng.
+IV. KẾT THÚC
+Băng cá nhân lại các vị trí chích.
+Chăm sóc sau thủ thuật: [mang vớ áp lực/băng ép chun giãn] trong [24/48] giờ.
+Kết thúc thủ thuật.</t></si><si><t>Bơm dính màng phổi Pleurodesis</t></si><si><r><rPr/><t xml:space="preserve">[$bên$=trái] https://i.imgur.com/qC4XKFb.png
+[$bên$=phải] </t></r><r><rPr><color rgb="FF1155CC"/><u/></rPr><t>https://i.imgur.com/xqfMk3T.png</t></r></si><si><t>- THỦ THUẬT: Gây dính màng phổi [$bên$=trái/phải]
+- Vô cảm: [Gây tê tại chỗ bằng Lidocain/Không cần gây tê]
+- Tư thế: bệnh nhân nằm ngửa.
+- Chuẩn bị: sát trùng, trãi săng có lỗ.
+I. CHUẨN BỊ DUNG DỊCH GÂY DÍNH
+- Tổng thể tích dung dịch gây dính: [100/60/80]ml.
+- Thành phần dịch bơm dính:
+⠀+ [Povidine 10%/Bột Talc vô trùng] lấy [30/40/50]ml.
+⠀+ [Lidocain 2% 200mg//10ml x 1 ống/Lidocain 2% 40mg//10mL x 1 ống].
+⠀+ NaCl 0,9%: [30/40/50]ml.
+II. TIẾN HÀNH THỦ THUẬT
+- Kẹp ống dẫn lưu.
+- Sát trùng kỹ ống dẫn lưu màng phổi $bên$.
+- Bơm dung dịch: dùng [01/02] bơm tiêm 50ml bơm dung dịch đã pha vào khoang màng phổi qua ống dẫn lưu $bên$.
+- Thủ thuật: [thuận lợi/có khó khăn nhẹ].
+III. KẾT THÚC
+- Dặn dò: thay đổi tư thế (nằm, ngồi, nghiêng trái, nghiêng phải) mỗi tư thế [15-20/20-30] phút để dung dịch lan tỏa đồng đều.
+- Theo dõi: theo dõi sát dấu hiệu sinh tồn và tình trạng đau, khó thở của bệnh nhân trong 6 giờ tiếp theo. Báo lại bác sĩ điều trị khi có bất thường.
+- Xả kẹp ống dẫn lưu sau thủ thuật 6 giờ.
+- Kết thúc thủ thuật.</t></si><si><t>Chọc dịch màng phổi</t></si><si><r><rPr/><t xml:space="preserve">[$bên$=trái] </t></r><r><rPr><color rgb="FF1155CC"/><u/></rPr><t>https://i.imgur.com/8rQ4l3D.png</t></r><r><rPr/><t xml:space="preserve">
+[$bên$=phải] </t></r><r><rPr><color rgb="FF1155CC"/><u/></rPr><t>https://i.imgur.com/acWi3NI.png</t></r></si><si><t xml:space="preserve">- THỦ THUẬT: Chọc hút dịch màng phổi [$bên$=trái/phải]
+- Vô cảm: gây tê tại chỗ bằng lidocain.

@@ -89,7 +89,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: stretch;
   gap: 2px;
-  background: #ffffff;
+  background: #dbeafe;
   color: #0f172a;
   padding: 0 8px;
   height: 40px;
