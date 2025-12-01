@@ -16,6 +16,9 @@ try {
     console.log('📦 Building project...');
     execSync('npm run build', { stdio: 'inherit' });
 
+    // ✅ Add CNAME file to dist
+    fs.writeFileSync(path.join(distDir, 'CNAME'), 'tuongtrinhphauthuat.longnguctimmach.com');
+    
     // 2. Navigate to dist directory
     process.chdir(distDir);
     console.log(`📂 Changed directory to ${distDir}`);
