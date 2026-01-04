@@ -8,8 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "build:single": "vite build && node ./build-inline/singlefile.js",
-    "inline:dist": "node ./build-inline/singlefile.js",
-    "deploy": "node deploy.js"
+    "deploy": "node deploy.js",
+    "deploy-spk": "node scripts/deploy-spk.js"
   },
   "dependencies": {
     "fast-xml-parser": "^4.3.6",

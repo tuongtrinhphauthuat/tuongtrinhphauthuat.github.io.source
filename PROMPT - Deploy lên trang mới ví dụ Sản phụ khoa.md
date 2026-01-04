@@ -1,0 +1,6 @@
+Tôi muốn tạo một npm "deploy-spk" cho trung tâm "Sản phụ khoa" (spk) với khả năng đồng bộ push code lên với github là "https://github.com/ttptspk/ttptspk.github.io".
+- Thư mục bạn build ra có tên là thư mục của github luôn (ví dụ "https://github.com/ttptspk/ttptspk.github.io" thì thư mục build ra là "ttptspk.github.io"). Cần tạo thư mục này nếu nó chưa có.
+- Build cần thay đổi DEFAULT_SOURCE_URL và DEFAULT_EDIT_URL cho riêng trung tâm "Sản phụ khoa" (spk):
+- DEFAULT_SOURCE_URL: là "https://docs.google.com/spreadsheets/d/e/2PACX-1vR9G9YUsNRklszGvCJZ1Ufnw1JfDStsABMYyNzcsaOE6PLQleXOtP6LP-AEBXEkr-XViDINMEi_Uex9/pub?output=xlsx"
+- DEFAULT_EDIT_URL: là "https://docs.google.com/spreadsheets/d/1EhVJtmp6X_LCDJe4qZ_4sqRUJ52anxvGJ939zhfr46o/edit?gid=0#gid=0"
+- Bạn thay đổi các giá trị này xong rồi là phải trả lại giá trị DEFAULT_SOURCE_URL và DEFAULT_EDIT_URL mặc định của tôi. Nghĩa là: bạn thay đổi DEFAULT_SOURCE_URL và DEFAULT_EDIT_URL → build → deploy → trả về nguyên trạng DEFAULT_SOURCE_URL và DEFAULT_EDIT_URL như source code hiện tại.
