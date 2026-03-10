@@ -18,7 +18,7 @@
           v-if="(isSelected(item) || tokens.length > 0) && item.versions && item.versions.length > (tokens.length > 0 ? 0 : 1)"
           class="protocols__submenu">
           <li v-for="(v, vIdx) in item.versions" :key="vIdx"
-            :class="['protocols__submenu-item', { 'is-active': isVersionSelected(v) }]"
+            :class="['protocols__submenu-item', { 'is-active': isVersionSelected(v), 'is-edited': v.isEdited }]"
             @click.stop="selectVersion(item, v)">
             {{ v.title }} <span v-if="v.isEdited" style="color:#f59e0b;font-weight:bold">*</span>
           </li>
@@ -246,5 +246,11 @@ function onInput() {
   color: #06b6d4;
   font-weight: 600;
   background: rgba(6, 182, 212, 0.05);
+}
+
+.protocols__submenu-item.is-edited {
+  background: #fff0f6; /* light pink */
+  color: #9f1239;
+  font-weight: 600;
 }
 </style>

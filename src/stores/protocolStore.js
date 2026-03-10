@@ -26,6 +26,13 @@ export const useProtocolStore = defineStore('protocol', {
         const parsed = await parseData(this.sourceUrl)
         this.protocols = Array.isArray(parsed) ? parsed : []
 
+        // Restore persisted edited flags (if any)
+        try {
+          this._applyPersistedFlags && this._applyPersistedFlags()
+        } catch (e) {
+          // ignore
+        }
+
         // Validate selectedId
         if (this.selectedId) {
           const exists = this.protocols.find(p => String(p.id) === String(this.selectedId) || String(p.stt) === String(this.selectedId))
@@ -104,9 +111,56 @@ export const useProtocolStore = defineStore('protocol', {
           // So we should probably not overwrite isEdited to false if it was true, unless we know content is clean.
           // But here we only know about title.
           // Let's just set it if title changed. If title matches, we leave it alone (it might be true due to content).
-          if (titleChanged) v.isEdited = true
+          if (titleChanged) {
+            v.isEdited = true
+            try {
+              const pid = p.stt ?? p.id
+              this.markVersionAsEdited(pid, v.title, true)
+            } catch (e) { }
+          }
         }
       }
+    },
+
+    // persistence helpers for edited flags
+    _editedFlagsKey() {
+      return 'protocols_edited_flags'
+    },
+
+    _makeFlagKey(protocolId, v) {
+      const vid = v && (v.id || v.originalTitle || v.title || '')
+      return `${protocolId}::${vid}`
+    },
+
+    _loadEditedFlags() {
+      try {
+        const raw = localStorage.getItem(this._editedFlagsKey())
+        return raw ? JSON.parse(raw) : {}
+      } catch (e) {
+        return {}
+      }
+    },
+
+    _saveEditedFlags(map) {
+      try {
+        localStorage.setItem(this._editedFlagsKey(), JSON.stringify(map || {}))
+      } catch (e) { }
+    },
+
+    _applyPersistedFlags() {
+      try {
+        const map = this._loadEditedFlags()
+        if (!map || typeof map !== 'object') return
+        if (!this.protocols || !this.protocols.length) return
+        this.protocols.forEach((p) => {
+          const pid = p.stt ?? p.id
+          if (!p.versions) return
+          p.versions.forEach((v) => {
+            const key = this._makeFlagKey(pid, v)
+            if (map.hasOwnProperty(key)) v.isEdited = !!map[key]
+          })
+        })
+      } catch (e) { }
     },
 
     markVersionAsEdited(protocolId, versionTitle, isEdited) {
@@ -115,7 +169,34 @@ export const useProtocolStore = defineStore('protocol', {
         const v = p.versions.find(v => v.title === versionTitle || (v.originalTitle && v.originalTitle === versionTitle))
         if (v) {
           v.isEdited = isEdited
+          try {
+            const pid = p.stt ?? p.id
+            const key = this._makeFlagKey(pid, v)
+            const map = this._loadEditedFlags() || {}
+            if (isEdited) map[key] = true
+            else delete map[key]
+            this._saveEditedFlags(map)
+          } catch (e) { }
         }
+      }
+    },
+
+    // Clear all edited flags for all versions across all protocols (Hard Reset)
+    clearAllEditedFlags() {
+      try {
+        if (this.protocols && this.protocols.length) {
+          this.protocols.forEach((p) => {
+            if (p.versions && p.versions.length) {
+              p.versions.forEach((v) => {
+                v.isEdited = false
+              })
+            }
+          })
+        }
+        // Clear the persisted flags map from localStorage
+        this._saveEditedFlags({})
+      } catch (e) {
+        console.error('Error clearing edited flags', e)
       }
     }
   }

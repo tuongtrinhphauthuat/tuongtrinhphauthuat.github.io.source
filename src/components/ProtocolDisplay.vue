@@ -209,17 +209,25 @@ function onRefresh() {
 
 // handle edited drafts emitted from ProtocolViewer
 function onEdited(payload) {
-  // Keep latest draft in memory but do not persist or autosave
   if (!payload || !payload.id) return
-  draftHtmlForViewer.value = payload.html
-  versionsStatus.value = `${t('unsavedDraft')} ${payload.id}`
 
-  // Mark as edited in store so UI updates (asterisk, reset button)
+  // payload.isChanged is computed by ProtocolViewer by diffing the current source
+  // against the original XLSX source — it is only true when the user actually changed something.
+  const isChanged = !!payload.isChanged
+
+  if (isChanged) {
+    draftHtmlForViewer.value = payload.html
+    versionsStatus.value = `${t('unsavedDraft')} ${payload.id}`
+  } else {
+    // Content was not actually changed (e.g. user reverted their edit).
+    versionsStatus.value = ''
+  }
+
+  // Sync isEdited state into store. This covers both directions:
+  // - true  → show asterisk, reset button, pink sidebar color
+  // - false → clear those indicators when user reverts to original
   if (store.selectedVersion && store.selectedId) {
-    const contentChanged = payload.isChanged
-    const titleChanged = store.selectedVersion.title !== store.selectedVersion.originalTitle
-    const isEdited = contentChanged || titleChanged
-    store.markVersionAsEdited(store.selectedId, store.selectedVersion.title, isEdited)
+    store.markVersionAsEdited(store.selectedId, store.selectedVersion.title, isChanged)
   }
 }
 
@@ -385,6 +393,7 @@ function executeConfirmAction() {
     appLifecycleService.clearDraftsAndReload()
   } else if (action === 'reset-app') {
     toastStore.addToast(t('appResetToast'), 'success')
+    // Hard reset: clear both drafts and edited flags (handled by appLifecycleService)
     appLifecycleService.resetAllLocalState()
   }
 }

@@ -18,9 +18,9 @@
             {{ inheritBadgeText }}
           </span>
           <div class="title-icons" role="toolbar" aria-label="Protocol actions">
-            <!-- Reset: double-click to reset immediately. Single click opens confirmation dialog. -->
-            <button id="viewer-btn-reset" class="viewer-icon-btn reset" @click.stop.prevent="onResetClick"
-              @dblclick.stop.prevent="doReset" :title="t('resetTooltip')">⟲</button>
+            <!-- Reset: single click opens confirmation dialog. Double-click shortcut removed to prevent accidental resets. -->
+            <button v-if="selectedVersion && selectedVersion.isEdited" id="viewer-btn-reset" class="viewer-icon-btn reset"
+              @click.stop.prevent="onResetClick" :title="t('resetTooltip')">⟲</button>
 
             <!-- spacer to separate reset from fullscreen to avoid accidental clicks -->
             <div style="width:12px"></div>
@@ -65,6 +65,7 @@ import ProtocolImages from './ProtocolImages.vue'
 import { parseBracketsToHtml, applyChoiceInDom, applyVarChoiceInDom, replaceVarTokensInDom, getPlainTextFromContainer } from '../services/bracketService'
 import { htmlToSource } from '../services/bracketReverseService'
 import draftService from '../services/draftService'
+import changeDetectionService from '../services/changeDetectionService'
 import languageService from '../services/languageService'
 import { filterImagesByVariables } from '../services/imageService'
 
@@ -97,6 +98,7 @@ const activeVarName = ref(null)
 const saveTimer = ref(null)
 const showConfirm = ref(false)
 const editedVersionTitle = ref('')
+const initialSuppress = ref(false)
 
 const availableImages = computed(() => {
   if (props.selectedVersion && Array.isArray(props.selectedVersion.images) && props.selectedVersion.images.length) {
@@ -150,22 +152,11 @@ watch(
 
 // Watch for title changes to save draft and update store
 watch(editedVersionTitle, (newVal, oldVal) => {
+  // During initial setup (loadContent sets the title programmatically),
+  // do NOT treat this as a user edit.
+  if (initialSuppress.value) return
+
   if (props.current && props.selectedVersion) {
-    // Update store immediately for sidebar reactivity
-    // We need to pass the *previous* title to find the version if we didn't track it, 
-    // but here we are mutating the title.
-    // Actually, if we mutate the title in the store, the selectedVersion prop (which is a ref to the store object) might update?
-    // Let's check: props.selectedVersion is passed from store.selectedVersion.
-
-    // If we update the store, the prop might change.
-    // But we need to be careful not to lose track of which version we are editing if the title is the key.
-    // The store uses the title to find the version in `updateVersionTitle`.
-
-    // Better approach: The store action `updateVersionTitle` updates the title.
-    // We need to know the *original* title or the *current* title in the store before update.
-    // Since `editedVersionTitle` is v-model, it updates on every keystroke.
-    // `props.selectedVersion.title` is the source of truth.
-
     if (props.selectedVersion.title !== newVal) {
       const id = props.current['STT'] || props.current.id
       store.updateVersionTitle(id, props.selectedVersion.title, newVal)
@@ -188,6 +179,8 @@ function getDraftId(protocol, version) {
 }
 
 function loadContent(nv, version) {
+  // suppress initial onInput emits while we programmatically set up the editor
+  initialSuppress.value = true
   // if a draftHtml is provided by parent, that takes precedence
   if (props.draftHtml) {
     editorHtml.value = props.draftHtml
@@ -205,36 +198,23 @@ function loadContent(nv, version) {
     if (id && draftService.hasDraft(id)) {
       const draft = draftService.getDraft(id)
       if (draft) {
-        // Check if original source matches current source
-        // If mismatch, it means XLSX updated, so we should discard draft
-        // Note: raw is the current XLSX content (displayContent)
-        // draft.originalSource should match raw
-
-        // We need to be careful: raw here is displayContent (stripped of title).
-        // draft.originalSource should be the same.
-
-        // If draft.originalSource is missing (legacy draft), we might want to keep it or discard.
-        // Let's assume if missing, we keep it (safe default), or maybe discard?
-        // User said: "if content downloaded from xlsx differs from original version title downloaded previously... delete local draft"
-        // Actually user said: "content downloaded from xlsx differs from original version title downloaded previously" - wait.
-        // "nội dung tải về của file xlsx nó khác với Tiêu đề version gốc được tải từ xlsx xuống trước đó"
-        // "content downloaded from xlsx differs from original version title..." - this phrasing is confusing.
-        // Likely means: "If the content from XLSX differs from the content the draft was based on".
-
-        // Let's compare draft.originalSource with raw.
+        // If the XLSX content changed since the draft was saved, discard the draft.
         const isOutdated = draft.originalSource && draft.originalSource !== raw
 
         if (isOutdated) {
           console.log('Draft is outdated (XLSX changed). Discarding draft for', id)
           draftService.clearDraft(id)
-          // use raw (XLSX content)
+          // use raw (XLSX content); isEdited stays false — original was restored
         } else {
+          // Restore draft content and title for display.
+          // Do NOT emit 'edited' here — the isEdited flag is already persisted
+          // in the store via _applyPersistedFlags(). Emitting here would trigger
+          // onEdited() in the parent which calls markVersionAsEdited() again,
+          // potentially setting isEdited if the draft content is identical to original.
           raw = draft.content
           if (draft.title !== null && draft.title !== undefined) {
             editedVersionTitle.value = draft.title
           }
-          // Notify parent that we are showing a draft
-          emit('edited', { id, html: null, text: null, ts: Date.now(), isDraft: true })
         }
       }
     }
@@ -276,6 +256,8 @@ function loadContent(nv, version) {
     } catch (e) {
       // ignore
     }
+    // allow future onInput emits (user edits) to run change detection again
+    initialSuppress.value = false
   })
 }
 
@@ -307,6 +289,8 @@ function nameOf(obj) {
 
 function doReset() {
   try {
+    // suppress emits while we reload canonical content
+    initialSuppress.value = true
     // Clear draft
     if (props.current) {
       const id = getDraftId(props.current, props.selectedVersion)
@@ -326,11 +310,23 @@ function doReset() {
       editedVersionTitle.value = props.selectedVersion ? props.selectedVersion.title : ''
     }
 
-    emit('reset')
+    // Mark version as not edited in store (and persist)
+    try {
+      const pid = props.current ? (props.current['STT'] || props.current.id) : null
+      const vtitle = props.selectedVersion ? (props.selectedVersion.originalTitle || props.selectedVersion.title) : null
+      if (pid && vtitle) store.markVersionAsEdited(pid, vtitle, false)
+    } catch (e) {
+      // ignore
+    }
+    // reload canonical content and re-enable detection after it finishes
+    try {
+      // reload content will unset initialSuppress at the end of its setup
+      loadContent(props.current, props.selectedVersion)
+    } finally {
+      // emit reset for other listeners
+      emit('reset')
+    }
   } catch (e) {
-        const hasOriginal = typeof draft.originalSource === 'string'
-        const reference = hasOriginal ? draft.originalSource : draft.content
-        const isOutdated = reference !== raw
     console.error('doReset error', e)
   }
 }
@@ -532,6 +528,10 @@ function popupChoose(index) {
 }
 
 function onInput() {
+  // During initial programmatic setup (load/version switch), ignore all input events.
+  // Only real user interactions (typing, bracket clicks) should reach here.
+  if (initialSuppress.value) return
+
   // ensure bracket spans stay non-editable; re-apply contenteditable=false
   if (!editor.value) return
   const spans = editor.value.querySelectorAll('.bracket-opt')
@@ -543,26 +543,36 @@ function onInput() {
   if (saveTimer.value) clearTimeout(saveTimer.value)
   saveTimer.value = setTimeout(() => {
     try {
+      if (!props.current) return
+
       const html = editor.value ? editor.value.innerHTML : editorHtml.value
       const text = getPlainTextFromContainer(editor.value || { innerText: '' })
+      const id = getDraftId(props.current, props.selectedVersion)
+      const source = htmlToSource(editor.value)
 
-      // Save draft
-      if (props.current) {
-        const id = getDraftId(props.current, props.selectedVersion)
-        const source = htmlToSource(editor.value)
-
-        // Get original content from current props to save as reference
-        let originalRaw = ''
-        if (props.selectedVersion && props.selectedVersion.displayContent) {
-          originalRaw = props.selectedVersion.displayContent
-        } else {
-          originalRaw = props.current ? props.current['Nội dung'] || props.current['content'] || '' : ''
-        }
-
-        draftService.saveDraft(id, source, editedVersionTitle.value, originalRaw)
+      // Get original content (XLSX) to compare against
+      let originalRaw = ''
+      if (props.selectedVersion && props.selectedVersion.displayContent) {
+        originalRaw = props.selectedVersion.displayContent
+      } else {
+        originalRaw = props.current['Nội dung'] || props.current['content'] || ''
       }
 
-      emit('edited', { id: getDraftId(props.current, props.selectedVersion), html, text, ts: Date.now() })
+      // Always compute isChanged by comparing current content to original XLSX source.
+      // Never shortcut via selectedVersion.isEdited to avoid carrying stale state.
+      const contentChanged = changeDetectionService.isContentChanged(source, originalRaw)
+      const titleChanged = editedVersionTitle.value !== (props.selectedVersion?.originalTitle ?? props.selectedVersion?.title ?? '')
+      const isChanged = contentChanged || titleChanged
+
+      // Only save draft when there is an actual change to avoid polluting localStorage.
+      if (isChanged) {
+        draftService.saveDraft(id, source, editedVersionTitle.value, originalRaw)
+      } else {
+        // No real change — clear any stale draft that may exist
+        draftService.clearDraft(id)
+      }
+
+      emit('edited', { id, html, text, ts: Date.now(), isChanged })
     } catch (err) {
       console.error('emit edited failed', err)
     }
@@ -602,7 +612,11 @@ defineExpose({
 
 // ensure initial spans are non-editable after mount
 onMounted(() => {
-  setTimeout(() => onInput(), 50)
+  // NOTE: We intentionally do NOT call onInput() here.
+  // Calling onInput() on mount triggers change detection before the user does anything,
+  // causing false isChanged positives. The editor content is already set by loadContent()
+  // via the watch on [current, selectedVersion] which runs with { immediate: true }.
+
   // attach click listener to editor for bracket clicks if not already attached
   if (editor.value && !editor.value._bracketClickAttached) {
     editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)

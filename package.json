@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "build:single": "vite build && node ./build-inline/singlefile.js",
-    "deploy": "node deploy.js",
+    "deploy-tuongtrinhphauthuat": "node scripts/deploy-tuongtrinhphauthuat.js",
     "deploy-spk": "node scripts/deploy-spk.js"
   },
   "dependencies": {

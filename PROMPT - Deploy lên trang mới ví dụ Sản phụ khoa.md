@@ -3,4 +3,5 @@ Tôi muốn tạo một npm "deploy-spk" cho trung tâm "Sản phụ khoa" (spk)
 - Build cần thay đổi DEFAULT_SOURCE_URL và DEFAULT_EDIT_URL cho riêng trung tâm "Sản phụ khoa" (spk):
 - DEFAULT_SOURCE_URL: là "https://docs.google.com/spreadsheets/d/e/2PACX-1vR9G9YUsNRklszGvCJZ1Ufnw1JfDStsABMYyNzcsaOE6PLQleXOtP6LP-AEBXEkr-XViDINMEi_Uex9/pub?output=xlsx"
 - DEFAULT_EDIT_URL: là "https://docs.google.com/spreadsheets/d/1EhVJtmp6X_LCDJe4qZ_4sqRUJ52anxvGJ939zhfr46o/edit?gid=0#gid=0"
+
 - Bạn thay đổi các giá trị này xong rồi là phải trả lại giá trị DEFAULT_SOURCE_URL và DEFAULT_EDIT_URL mặc định của tôi. Nghĩa là: bạn thay đổi DEFAULT_SOURCE_URL và DEFAULT_EDIT_URL → build → deploy → trả về nguyên trạng DEFAULT_SOURCE_URL và DEFAULT_EDIT_URL như source code hiện tại.

@@ -12,7 +12,6 @@ const schema = [
         id: 'menu-file-refresh',
         domId: 'menu-file-refresh',
         labelKey: 'menuFileRefresh',
-        descriptionKey: 'menuFileRefreshDesc',
         action: 'refresh-protocols',
         icon: '🔄',
         className: 'app-menu__item app-menu__item--refresh'
@@ -21,7 +20,6 @@ const schema = [
         id: 'menu-file-google-sheet',
         domId: 'menu-file-google-sheet',
         labelKey: 'menuFileGoogleSheet',
-        descriptionKey: 'menuFileGoogleSheetDesc',
         action: 'open-data-settings',
         icon: '🛠️',
         className: 'app-menu__item app-menu__item--settings'
@@ -30,7 +28,6 @@ const schema = [
         id: 'menu-file-edit-sheet',
         domId: 'menu-file-edit-sheet',
         labelKey: 'menuFileEditSheet',
-        descriptionKey: 'menuFileEditSheetDesc',
         action: 'open-edit-sheet',
         icon: '✏️',
         className: 'app-menu__item app-menu__item--link'
@@ -39,7 +36,6 @@ const schema = [
         id: 'menu-file-new-design',
         domId: 'menu-file-new-design',
         labelKey: 'menuFileNewDesign',
-        descriptionKey: 'menuFileNewDesignDesc',
         action: 'open-new-design',
         icon: '🧪',
         className: 'app-menu__item app-menu__item--soon'
@@ -57,7 +53,6 @@ const schema = [
         id: 'menu-edit-copy',
         domId: 'menu-edit-copy',
         labelKey: 'menuEditCopy',
-        descriptionKey: 'menuEditCopyDesc',
         action: 'copy-protocol',
         icon: '📋',
         shortcut: 'Ctrl + C',
@@ -67,26 +62,15 @@ const schema = [
         id: 'menu-edit-copy-source',
         domId: 'menu-edit-copy-source',
         labelKey: 'menuEditCopySource',
-        descriptionKey: 'menuEditCopySourceDesc',
         action: 'copy-source',
         icon: '💾',
         shortcut: 'Ctrl + Alt + C',
         className: 'app-menu__item app-menu__item--copy-source'
       },
       {
-        id: 'menu-edit-clear-drafts',
-        domId: 'menu-edit-clear-drafts',
-        labelKey: 'menuEditClearDrafts',
-        descriptionKey: 'menuEditClearDraftsDesc',
-        action: 'clear-drafts',
-        icon: '🧹',
-        className: 'app-menu__item app-menu__item--danger'
-      },
-      {
         id: 'menu-edit-reset-all',
         domId: 'menu-edit-reset-all',
         labelKey: 'menuEditResetAll',
-        descriptionKey: 'menuEditResetAllDesc',
         action: 'reset-app',
         icon: '⚠️',
         className: 'app-menu__item app-menu__item--danger'
@@ -104,7 +88,6 @@ const schema = [
         id: 'menu-tools-language',
         domId: 'menu-tools-language',
         labelKey: 'menuToolsLanguage',
-        descriptionKey: 'menuToolsLanguageDesc',
         action: 'open-language-dialog',
         icon: '🌐',
         className: 'app-menu__item app-menu__item--language'
@@ -113,7 +96,6 @@ const schema = [
         id: 'menu-tools-font-size',
         domId: 'menu-tools-font-size',
         labelKey: 'menuToolsFontSize',
-        descriptionKey: 'menuToolsFontSizeDesc',
         action: 'open-fontsize-dialog',
         icon: '🔠',
         className: 'app-menu__item app-menu__item--font'
@@ -131,7 +113,6 @@ const schema = [
         id: 'menu-help-user-guide',
         domId: 'menu-help-user-guide',
         labelKey: 'menuHelpGuide',
-        descriptionKey: 'menuHelpGuideDesc',
         action: 'open-help-link',
         icon: '📘',
         className: 'app-menu__item app-menu__item--link'
@@ -140,7 +121,6 @@ const schema = [
         id: 'menu-help-shortcuts',
         domId: 'menu-help-shortcuts',
         labelKey: 'menuHelpShortcuts',
-        descriptionKey: 'menuHelpShortcutsDesc',
         action: 'open-shortcuts-dialog',
         icon: '⌨️',
         className: 'app-menu__item app-menu__item--shortcuts'
@@ -149,7 +129,6 @@ const schema = [
         id: 'menu-help-author',
         domId: 'menu-help-author',
         labelKey: 'menuHelpAuthor',
-        descriptionKey: 'menuHelpAuthorDesc',
         action: 'open-author-dialog',
         icon: '👤',
         className: 'app-menu__item app-menu__item--author'
