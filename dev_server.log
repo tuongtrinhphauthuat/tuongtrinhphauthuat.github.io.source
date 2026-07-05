@@ -1,0 +1,12 @@
+
+> thoracic-protocols@0.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 458 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+[1m[33m[@vue/compiler-sfc][0m[33m `defineProps` is a compiler macro and no longer needs to be imported.[0m
+
+[1m[33m[@vue/compiler-sfc][0m[33m `defineEmits` is a compiler macro and no longer needs to be imported.[0m

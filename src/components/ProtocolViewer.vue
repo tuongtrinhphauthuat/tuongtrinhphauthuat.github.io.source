@@ -62,6 +62,7 @@
       :title="editedVersionTitle"
       :content="getHtmlToSource()"
       :originalColumnName="selectedVersion?.columnName"
+      :suggestedNewColumnName="suggestedNewColumnName"
       @close="showPushDialog = false"
       @success="onPushSuccess"
     />
@@ -113,6 +114,39 @@ const showConfirm = ref(false)
 const editedVersionTitle = ref('')
 const initialSuppress = ref(false)
 const showPushDialog = ref(false)
+
+const suggestedNewColumnName = computed(() => {
+  if (!props.current || !props.current.versions) return 'Nội dung 1'
+  const versions = props.current.versions
+  if (versions.length === 0) return 'Nội dung 1'
+
+  // Look for the last column that starts with 'Nội dung'
+  let highestIndex = 0
+  let firstEmptyIndex = -1
+
+  // Actually we need to see what columns exist. We just assume versions are sorted by index or we can extract the number
+  // from column names
+  for (let i = 0; i < versions.length; i++) {
+    const v = versions[i]
+    if (v.columnName && v.columnName.toLowerCase().startsWith('nội dung')) {
+      const match = v.columnName.match(/\d+/)
+      if (match) {
+        const num = parseInt(match[0], 10)
+        if (num > highestIndex) {
+          highestIndex = num
+        }
+      }
+
+      // If it's an empty version, we might want to suggest it as the new column
+      if (firstEmptyIndex === -1 && (!v.content || v.content.trim() === '')) {
+         return v.columnName // return the first empty column
+      }
+    }
+  }
+
+  // If we found no empty columns, we suggest the next one
+  return `Nội dung ${highestIndex + 1}`
+})
 
 function getHtmlToSource() {
   return htmlToSource(editor.value ? editor.value.innerHTML : editorHtml.value)

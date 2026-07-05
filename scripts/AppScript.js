@@ -54,8 +54,53 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Check for exact duplicate content in all "Nội dung" columns
+    if (mode !== 'append_image') {
+      for (var c = 0; c < headerRow.length; c++) {
+        var hName = String(headerRow[c] || '').toLowerCase();
+        if (hName.indexOf('nội dung') === 0) {
+          var cellContent = String(values[rowIndex - 1][c] || '').trim();
+          var newContent = String(content).trim();
+          if (cellContent === newContent) {
+            return ContentService.createTextOutput(JSON.stringify({
+              status: 'error',
+              message: 'Nội dung trùng lắp hoàn toàn với phiên bản hiện tại ở cột: ' + headerRow[c]
+            })).setMimeType(ContentService.MimeType.JSON);
+          }
+        }
+      }
+    }
+
     // Xử lý Cột
-    if (mode === 'overwrite') {
+    if (mode === 'append_image') {
+      // Find the first "Hình ảnh" column, or create one if none exist
+      var imgColIndex = -1;
+      for (var c = 0; c < headerRow.length; c++) {
+        var hName = String(headerRow[c] || '').toLowerCase();
+        if (hName.indexOf('hình ảnh') === 0) {
+          imgColIndex = c + 1;
+          break;
+        }
+      }
+
+      if (imgColIndex === -1) {
+        imgColIndex = headerRow.length + 1;
+        sheet.getRange(1, imgColIndex).setValue('Hình ảnh 1');
+      }
+
+      var currentImgContent = String(sheet.getRange(rowIndex, imgColIndex).getValue() || '');
+      var newImgContent = currentImgContent;
+      if (newImgContent.length > 0 && !newImgContent.endsWith('\n')) {
+        newImgContent += '\n';
+      }
+      newImgContent += content;
+      sheet.getRange(rowIndex, imgColIndex).setValue(newImgContent);
+
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'success',
+        message: 'Đã thêm ảnh thành công.'
+      })).setMimeType(ContentService.MimeType.JSON);
+    } else if (mode === 'overwrite') {
       // Tìm cột có sẵn
       for (var c = 0; c < headerRow.length; c++) {
         if (headerRow[c] === columnName) {
