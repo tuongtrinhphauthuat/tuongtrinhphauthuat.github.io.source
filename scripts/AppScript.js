@@ -1,110 +1,102 @@
-// This Google Apps Script is used to receive push requests from the app
-// and update the target Google Sheet accordingly.
+// ==========================================
+// GOOGLE APPS SCRIPT CHO THƯỜNG TRÌNH PHẪU THUẬT
+// ==========================================
+// Hướng dẫn cài đặt:
+// 1. Mở file Google Sheet chứa dữ liệu của bạn.
+// 2. Chọn menu Tiện ích mở rộng (Extensions) > Apps Script.
+// 3. Xóa nội dung cũ và dán toàn bộ đoạn mã này vào.
+// 4. Bấm Lưu (Save - biểu tượng đĩa mềm).
+// 5. Chọn nút Triển khai (Deploy) > Triển khai mới (New deployment).
+// 6. Chọn loại: Ứng dụng web (Web app).
+// 7. Quyền truy cập: Bất kỳ ai (Anyone).
+// 8. Bấm Triển khai (Deploy) và cấp quyền nếu được hỏi.
+// 9. Copy "Web app URL" và dán vào phần Cài đặt trong web app Tường Trình Phẫu Thuật.
 
 function doPost(e) {
   try {
-    // Enable CORS
-    var headers = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    };
+    // Để hỗ trợ CORS từ trình duyệt mà không bị preflight OPTIONS block,
+    // web app gửi lên dưới dạng text/plain.
+    var payloadString = e.postData.contents;
+    var data = JSON.parse(payloadString);
 
-    if (e.postData.type !== 'application/json') {
-      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Invalid content type" }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    var data = JSON.parse(e.postData.contents);
-    var targetSheetUrl = data.sheetUrl; // We will pass this from the app
     var stt = data.stt;
-    var name = data.name;
+    var columnName = data.columnName;
     var content = data.content;
-    var title = data.title;
-    var mode = data.mode; // 'new' or 'overwrite'
-    var originalColumnName = data.originalColumnName;
+    var mode = data.mode; // 'overwrite' or 'new'
 
-    if (!targetSheetUrl) {
-      throw new Error("No sheetUrl provided");
+    if (!stt || !columnName || !content) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'error',
+        message: 'Thiếu dữ liệu: stt, columnName, hoặc content'
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    var ss = SpreadsheetApp.openByUrl(targetSheetUrl);
-    var sheet = ss.getSheetByName("Protocols") || ss.getSheets()[0];
-
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     var dataRange = sheet.getDataRange();
     var values = dataRange.getValues();
-    var headersRow = values[0];
 
-    // Find the row
-    var targetRowIndex = -1;
-    for (var i = 1; i < values.length; i++) {
-      if (
-        (stt && values[i][headersRow.indexOf("STT")] == stt) ||
-        (name && values[i][headersRow.indexOf("Tên")] == name) ||
-        (name && values[i][headersRow.indexOf("Tên phẫu thuật")] == name)
-      ) {
-        targetRowIndex = i;
+    var headerRow = values[0];
+    var rowIndex = -1;
+    var colIndex = -1;
+
+    // Tìm hàng dựa theo STT
+    for (var r = 1; r < values.length; r++) {
+      if (String(values[r][0]) === String(stt)) {
+        rowIndex = r + 1; // Google Sheet index bắt đầu từ 1
         break;
       }
     }
 
-    if (targetRowIndex === -1) {
-      throw new Error("Protocol not found in sheet.");
+    if (rowIndex === -1) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'error',
+        message: 'Không tìm thấy STT: ' + stt
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    var targetColIndex = -1;
-
-    if (mode === "overwrite" && originalColumnName) {
-      targetColIndex = headersRow.indexOf(originalColumnName);
-    }
-
-    if (targetColIndex === -1) {
-      // Find new column
-      // First try to find an existing empty "Nội dung" column
-      for (var j = 0; j < headersRow.length; j++) {
-        var h = String(headersRow[j] || "").toLowerCase();
-        if (h.startsWith("nội dung")) {
-          if (!values[targetRowIndex][j]) {
-            targetColIndex = j;
-            break;
-          }
+    // Xử lý Cột
+    if (mode === 'overwrite') {
+      // Tìm cột có sẵn
+      for (var c = 0; c < headerRow.length; c++) {
+        if (headerRow[c] === columnName) {
+          colIndex = c + 1;
+          break;
         }
       }
-
-      // If still not found, create a new column
-      if (targetColIndex === -1) {
-        targetColIndex = headersRow.length;
-        sheet.getRange(1, targetColIndex + 1).setValue("Nội dung " + (targetColIndex));
+      if (colIndex === -1) {
+         return ContentService.createTextOutput(JSON.stringify({
+          status: 'error',
+          message: 'Không tìm thấy cột để ghi đè: ' + columnName
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    } else {
+      // Chế độ tạo cột mới (new)
+      // Tìm xem tên cột đã tồn tại chưa (tránh trùng lặp)
+      for (var c = 0; c < headerRow.length; c++) {
+        if (headerRow[c] === columnName) {
+          colIndex = c + 1;
+          break;
+        }
+      }
+      // Nếu chưa có, tạo cột mới ở cuối
+      if (colIndex === -1) {
+        colIndex = headerRow.length + 1;
+        sheet.getRange(1, colIndex).setValue(columnName);
       }
     }
 
-    // Format the content
-    var finalContent = content;
-    if (title) {
-        finalContent = "(#" + title + ")\n" + finalContent;
-    }
+    // Cập nhật nội dung
+    sheet.getRange(rowIndex, colIndex).setValue(content);
 
-    // Write the content
-    sheet.getRange(targetRowIndex + 1, targetColIndex + 1).setValue(finalContent);
-
-    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success',
+      message: 'Đã cập nhật thành công.'
+    })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error',
+      message: error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
   }
-}
-
-// Handle OPTIONS request for CORS preflight
-function doOptions(e) {
-  var headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400"
-  };
-
-  return ContentService.createTextOutput("")
-    .setMimeType(ContentService.MimeType.TEXT);
 }

@@ -190,44 +190,42 @@ Dưới đây là ví dụ mẫu cho một ô trong cột **Nội dung**:
 4.  **[Nội khí quản 2 nòng/1 nòng]**: Lựa chọn đơn giản.
 5.  **$Ben$**: Tự động điền giá trị "Trái" hoặc "Phải" tùy theo lựa chọn ở trên.
 
-## 7. Đẩy (Push) Bản nháp lên Google Sheet qua Apps Script
-
-Bạn có thể cấu hình ứng dụng để cho phép người dùng "Push" (đẩy) trực tiếp các phiên bản đã chỉnh sửa lên Google Sheet mà không cần mở file Excel.
-
-### Bước 1: Lấy mã nguồn Apps Script
-Bạn cần copy đoạn mã Google Apps Script.
-Tìm file `scripts/AppScript.js` trong thư mục gốc của dự án hoặc liên hệ quản trị viên để lấy mã này.
-
-### Bước 2: Tạo và Deploy Apps Script
-1. Mở file Google Sheet của bạn.
-2. Trên thanh menu, chọn **Tiện ích mở rộng > Apps Script** (Extensions > Apps Script).
-3. Trong cửa sổ mới mở, dán toàn bộ đoạn mã bạn vừa copy vào (xóa đoạn mã `function myFunction() {}` mặc định đi).
-4. Nhấn nút **Lưu dự án** (biểu tượng đĩa mềm).
-5. Nhấn nút **Triển khai > Trình triển khai mới** (Deploy > New deployment).
-6. Ở góc trên bên trái cửa sổ mới, nhấn biểu tượng bánh răng và chọn **Ứng dụng web** (Web app).
-7. Điền thông tin:
-   - Thêm mô tả: (Tùy chọn) Ví dụ "Push Protocol"
-   - Thực thi với tư cách: **Tôi** (Me)
-   - Người có quyền truy cập: **Bất kỳ ai** (Anyone)
-8. Nhấn **Triển khai** (Deploy). *Lưu ý: Bạn có thể cần cấp quyền truy cập cho script.*
-9. Sau khi triển khai thành công, copy **URL ứng dụng web** (Web app URL).
-
-### Bước 3: Cấu hình trong ứng dụng
-1. Quay lại giao diện phần mềm Protocol.
-2. Mở phần **Cài đặt** (Settings) từ Menu (Góc trái > Tập tin > Cài đặt nguồn dữ liệu).
-3. Dán **URL ứng dụng web** vừa copy vào ô **Google Apps Script URL** (nằm bên dưới Edit URL).
-4. Lưu và đóng cài đặt.
-
-Từ giờ, khi bạn chỉnh sửa một protocol, sẽ xuất hiện nút **Mũi tên lên (Push)** cạnh nút Reset. Nhấn vào đó để đẩy nội dung mới lên Google Sheet (bạn có thể chọn tạo cột mới hoặc ghi đè cột cũ).
-
-
-## 8. Tips & Tricks
+## 7. Tips & Tricks
 
 1.  **Escaping**: Nếu văn bản của bạn thực sự cần dấu `/` (ví dụ: "1/2"), hãy viết là `//` (ví dụ: `1//2`).
 2.  **Xuống dòng**: Trong Excel, dùng `Alt + Enter` để xuống dòng. Phần mềm sẽ hiển thị đúng các dòng này.
 3.  **In đậm**: Sử dụng `**từ cần in đậm**` để in đậm văn bản (Markdown style).
 4.  **Sao chép công thức**: Nếu các protocol có cấu trúc giống nhau, hãy copy paste và chỉ sửa các phần trong ngoặc `[]`.
 5.  **Kiểm tra lỗi**: Nếu thấy bracket không hoạt động (hiện nguyên văn bản gốc), hãy kiểm tra xem có thiếu dấu đóng `]` hoặc thừa khoảng trắng không mong muốn không.
+
+
+---
+
+## 8. Cấu hình Cập nhật trực tiếp lên Google Sheet
+
+Bạn có thể chỉnh sửa và đẩy (push) một phiên bản protocol trực tiếp từ ứng dụng lên Google Sheet mà không cần mở Excel.
+
+### Các bước cài đặt:
+
+**Bước 1: Triển khai App Script**
+1. Mở file Google Sheet của bạn.
+2. Trên thanh menu, chọn **Tiện ích mở rộng** (Extensions) > **Apps Script**.
+3. Xoá mã cũ đi và copy toàn bộ nội dung từ file [`scripts/AppScript.js`](scripts/AppScript.js) dán vào.
+4. Bấm **Lưu** (Save - biểu tượng đĩa mềm).
+5. Bấm nút **Triển khai** (Deploy) ở góc trên bên phải > Chọn **Triển khai mới** (New deployment).
+6. Ở ô **Chọn loại** (Select type), chọn **Ứng dụng web** (Web app).
+7. Mục **Quyền truy cập** (Who has access), bạn **bắt buộc phải chọn: Bất kỳ ai** (Anyone).
+8. Bấm **Triển khai** (Deploy). Nếu Google yêu cầu cấp quyền, hãy đăng nhập và chọn "Advanced (Nâng cao)" -> "Go to ... (Đi tới...)".
+9. Copy đường dẫn **Web app URL** được tạo ra.
+
+**Bước 2: Gắn URL vào Ứng dụng**
+1. Mở ứng dụng Quản lý Protocol của bạn.
+2. Nhấn nút cài đặt (biểu tượng bánh răng) hoặc Menu > Công cụ > Cài đặt.
+3. Chuyển sang tab **Cài đặt chung**.
+4. Dán URL vừa copy vào ô **URL App Script (để upload)**.
+5. Cài đặt tự động lưu lại.
+
+Bây giờ, bất cứ khi nào bạn chỉnh sửa một version trên ứng dụng (tiêu đề xuất hiện dấu sao màu cam `*`), một nút **↑ (Push)** màu xanh sẽ hiện ra cạnh tiêu đề. Bạn có thể nhấn vào đó để cập nhật đè lên version cũ hoặc tạo hẳn một cột version mới trên Google Sheet.
 
 ---
 *Tài liệu được tạo tự động bởi trợ lý AI Antigravity.*
