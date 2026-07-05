@@ -60,7 +60,7 @@
       :protocolStt="current?.STT || current?.id || current?.['STT']"
       :protocolName="nameOf(current)"
       :title="editedVersionTitle"
-      :content="htmlToSource(editorHtml)"
+      :content="getHtmlToSource()"
       :originalColumnName="selectedVersion?.columnName"
       @close="showPushDialog = false"
       @success="onPushSuccess"
@@ -112,6 +112,24 @@ const saveTimer = ref(null)
 const showConfirm = ref(false)
 const editedVersionTitle = ref('')
 const initialSuppress = ref(false)
+const showPushDialog = ref(false)
+
+function getHtmlToSource() {
+  return htmlToSource(editor.value ? editor.value.innerHTML : editorHtml.value)
+}
+
+function onPushSuccess() {
+  showPushDialog.value = false
+  if (toastStore && toastStore.addToast) {
+    toastStore.addToast(t('pushSuccess'), 'success')
+  }
+  // optional: reset the draft status and fetch latest
+  if (props.current) {
+    const id = getDraftId(props.current, props.selectedVersion)
+    draftService.clearDraft(id)
+  }
+  store.fetchProtocols(true)
+}
 
 const availableImages = computed(() => {
   if (props.selectedVersion && Array.isArray(props.selectedVersion.images) && props.selectedVersion.images.length) {
@@ -608,6 +626,13 @@ defineExpose({
   copyEditor: onCopy,
   getEditorHtml: () => (editor.value ? editor.value.innerHTML : editorHtml.value),
   getEditedTitle: () => editedVersionTitle.value,
+  pushVersion: () => {
+    if (!store.appScriptUrl) {
+      toastStore.addToast(t('appScriptUrlMissing'), 'error')
+      return
+    }
+    showPushDialog.value = true
+  },
   reset: async () => {
     // hide any open popup and reload content after DOM stabilizes
     popupVisible.value = false
