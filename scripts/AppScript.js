@@ -85,10 +85,19 @@ function doPost(e) {
 
       if (imgColIndex === -1) {
         imgColIndex = headerRow.length + 1;
-        sheet.getRange(1, imgColIndex).setValue('Hình ảnh 1');
+        sheet.getRange(1, imgColIndex).setValue('Hình ảnh');
       }
 
       var currentImgContent = String(sheet.getRange(rowIndex, imgColIndex).getValue() || '');
+
+      var targetImageUrl = data.imageUrl || content;
+      if (currentImgContent.indexOf(targetImageUrl) !== -1) {
+         return ContentService.createTextOutput(JSON.stringify({
+            status: 'success',
+            message: 'Đã thêm ảnh thành công.'
+         })).setMimeType(ContentService.MimeType.JSON);
+      }
+
       var newImgContent = currentImgContent;
       if (newImgContent.length > 0 && !newImgContent.endsWith('\n')) {
         newImgContent += '\n';
