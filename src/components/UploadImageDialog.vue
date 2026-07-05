@@ -14,7 +14,7 @@
               <input type="text" v-model="protocolSearch" placeholder="Tìm kiếm protocol..." class="form-control" @focus="showDropdown = true" @blur="onBlurDropdown" />
               <ul v-if="showDropdown" class="protocol-dropdown">
                 <li v-for="p in filteredProtocols" :key="p.STT || p.id" @mousedown.prevent="selectProtocol(p)">
-                  {{ p.STT }} - {{ p.name }}
+                  {{ p.name }}
                 </li>
                 <li v-if="!filteredProtocols.length" class="no-results">Không tìm thấy</li>
               </ul>
@@ -31,17 +31,27 @@
 
           <div class="form-group">
             <label>Biến liên kết ảnh (Tuỳ chọn)</label>
-            <div class="condition-row">
-              <select v-model="selectedVar" class="form-control var-select">
+            <div v-for="(cond, index) in conditions" :key="index" class="condition-row" style="margin-bottom: 8px;">
+              <select v-model="cond.varName" class="form-control var-select">
                 <option value="">-- Chọn biến --</option>
-                <option v-for="v in availableVars" :key="v" :value="v">${{ v }}$</option>
+                <option v-for="v in availableVars" :key="v.name" :value="v.name">${{ v.name }}$</option>
               </select>
-              <select v-model="selectedOp" class="form-control op-select">
+              <select v-model="cond.op" class="form-control op-select">
                 <option value="=">=</option>
                 <option value="!=">!=</option>
               </select>
-              <input type="text" v-model="varValue" placeholder="Giá trị..." class="form-control value-input" :disabled="!selectedVar" />
+              <template v-if="cond.varName">
+                <select v-if="getChoicesForVar(cond.varName).length > 0" v-model="cond.value" class="form-control value-input">
+                  <option value="">-- Chọn giá trị --</option>
+                  <option v-for="choice in getChoicesForVar(cond.varName)" :key="choice" :value="choice">{{ choice }}</option>
+                </select>
+                <input v-else type="text" v-model="cond.value" placeholder="Giá trị..." class="form-control value-input" />
+              </template>
+              <input v-else type="text" v-model="cond.value" placeholder="Giá trị..." class="form-control value-input" disabled />
+
+              <button class="btn btn-icon" @click="removeCondition(index)" v-if="conditions.length > 1" title="Xoá điều kiện" style="color: #ef4444; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
             </div>
+            <button class="btn btn-add-cond" @click="addCondition" style="margin-top: 5px; font-size: 0.85rem; padding: 4px 8px; background: #e2e8f0; color: #475569; border: none; border-radius: 4px; cursor: pointer;">+ Thêm biến</button>
           </div>
 
           <div class="form-group">
@@ -75,6 +85,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useProtocolStore } from '../stores/protocolStore'
 import { useToastStore } from '../stores/toastStore'
+import { parseBracketsToHtml } from '../services/bracketService'
 
 const emit = defineEmits(['close', 'success'])
 const store = useProtocolStore()
@@ -85,9 +96,15 @@ const showDropdown = ref(false)
 const selectedProtocol = ref(null)
 const imageUrl = ref('')
 const imageDesc = ref('')
-const selectedVar = ref('')
-const selectedOp = ref('=')
-const varValue = ref('')
+const conditions = ref([{ varName: '', op: '=', value: '' }])
+
+function addCondition() {
+  conditions.value.push({ varName: '', op: '=', value: '' })
+}
+
+function removeCondition(index) {
+  conditions.value.splice(index, 1)
+}
 const isUploading = ref(false)
 const imageError = ref(false)
 
@@ -120,23 +137,47 @@ function onBlurDropdown() {
 }
 
 const availableVars = computed(() => {
-  const vars = new Set()
+  const varMap = new Map()
   if (selectedProtocol.value && selectedProtocol.value.versions) {
     selectedProtocol.value.versions.forEach(v => {
       if (v.content) {
+        const parsed = parseBracketsToHtml(v.content)
+        if (parsed && parsed.varDefs) {
+          parsed.varDefs.forEach(def => {
+             if (!varMap.has(def.name)) {
+                varMap.set(def.name, { name: def.name, choices: [...def.choices] })
+             } else {
+                const existing = varMap.get(def.name)
+                def.choices.forEach(c => {
+                  if (!existing.choices.includes(c)) existing.choices.push(c)
+                })
+             }
+          })
+        }
+
+        // Fallback for variables not defined with choices
         const matches = v.content.match(/\$([^\$]+)\$/g)
         if (matches) {
-          matches.forEach(m => vars.add(m.replace(/\$/g, '').trim()))
+          matches.forEach(m => {
+            const name = m.replace(/\$/g, '').trim()
+            if (!varMap.has(name)) {
+              varMap.set(name, { name: name, choices: [] })
+            }
+          })
         }
       }
     })
   }
-  return Array.from(vars).sort()
+  return Array.from(varMap.values()).sort((a, b) => a.name.localeCompare(b.name))
 })
 
+function getChoicesForVar(varName) {
+  const v = availableVars.value.find(x => x.name === varName)
+  return v ? v.choices : []
+}
+
 watch(selectedProtocol, () => {
-  selectedVar.value = ''
-  varValue.value = ''
+  conditions.value = [{ varName: '', op: '=', value: '' }]
 })
 
 watch(imageUrl, () => {
@@ -160,9 +201,12 @@ async function doUpload() {
   isUploading.value = true
   try {
     let finalLine = ''
-    if (selectedVar.value && varValue.value.trim()) {
-      finalLine += `[$${selectedVar.value}$ ${selectedOp.value} ${varValue.value.trim()}] `
-    }
+    conditions.value.forEach(cond => {
+      if (cond.varName && cond.value.trim()) {
+        finalLine += `[$${cond.varName}$ ${cond.op} ${cond.value.trim()}] `
+      }
+    })
+
     if (imageDesc.value.trim()) {
       finalLine += `${imageDesc.value.trim()} `
     }
@@ -170,8 +214,9 @@ async function doUpload() {
 
     const payload = {
       stt: selectedProtocol.value.STT || selectedProtocol.value.stt,
-      columnName: 'Hình ảnh 1', // apps script will handle finding the right column or appending
+      columnName: 'Hình ảnh', // apps script will handle finding the right column or appending
       content: finalLine,
+      imageUrl: imageUrl.value.trim(),
       mode: 'append_image'
     }
 
