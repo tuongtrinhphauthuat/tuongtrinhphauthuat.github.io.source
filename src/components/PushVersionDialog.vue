@@ -9,7 +9,10 @@
       <div class="push-content">
         <div class="push-info">
           <div><strong>Protocol:</strong> {{ protocolName }}</div>
-          <div><strong>{{ t('versionTitle') }}:</strong> {{ title }}</div>
+          <div class="push-edit-title">
+            <strong>{{ t('versionTitle') }}:</strong>
+            <input type="text" v-model="editableTitle" class="push-input inline-input" />
+          </div>
         </div>
 
         <div class="push-options">
@@ -18,14 +21,15 @@
             <span>{{ t('pushOverwrite') }} <small v-if="originalColumnName">({{ originalColumnName }})</small></span>
           </label>
           <label class="push-option">
-            <input type="radio" v-model="pushMode" value="new" />
-            <span>{{ t('pushNewColumn') }}</span>
+            <input type="radio" v-model="pushMode" value="new" :disabled="!suggestedNewColumnName" />
+            <span>{{ t('pushNewColumn') }} <small v-if="suggestedNewColumnName">({{ suggestedNewColumnName }})</small></span>
           </label>
         </div>
 
-        <div v-if="pushMode === 'new'" class="push-new-col">
-          <label>{{ t('pushNewColumnName') }}</label>
-          <input type="text" v-model="newColumnName" class="push-input" placeholder="e.g. Ver2, Nội dung 2" />
+        <!-- Progress Indicator -->
+        <div v-if="isPushing" class="push-progress">
+          <div class="spinner"></div>
+          <span>{{ t('pushing') }}...</span>
         </div>
       </div>
 
@@ -40,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useProtocolStore } from '../stores/protocolStore'
 import { useToastStore } from '../stores/toastStore'
 import languageService from '../services/languageService'
@@ -54,18 +58,28 @@ const props = defineProps({
   protocolName: { type: String, required: true },
   title: { type: String, required: true },
   content: { type: String, required: true },
-  originalColumnName: { type: String, default: '' }
+  originalColumnName: { type: String, default: '' },
+  suggestedNewColumnName: { type: String, default: '' }
 })
 
 const emit = defineEmits(['close', 'success'])
 
 const pushMode = ref(props.originalColumnName ? 'overwrite' : 'new')
-const newColumnName = ref('')
 const isPushing = ref(false)
+const editableTitle = ref(props.title + ' copy')
 
 const canPush = computed(() => {
-  if (pushMode.value === 'new' && !newColumnName.value.trim()) return false
+  if (pushMode.value === 'new' && !props.suggestedNewColumnName) return false
+  if (!editableTitle.value.trim()) return false
   return true
+})
+
+onMounted(() => {
+  if (!props.originalColumnName && props.suggestedNewColumnName) {
+    pushMode.value = 'new'
+  } else if (!props.originalColumnName && !props.suggestedNewColumnName) {
+    pushMode.value = 'overwrite' // Fallback, will be disabled anyway
+  }
 })
 
 async function doPush() {
@@ -76,8 +90,8 @@ async function doPush() {
 
   isPushing.value = true
   try {
-    const columnName = pushMode.value === 'overwrite' ? props.originalColumnName : newColumnName.value.trim()
-    const fullContent = `(#${props.title})\n${props.content}`
+    const columnName = pushMode.value === 'overwrite' ? props.originalColumnName : props.suggestedNewColumnName
+    const fullContent = `(#${editableTitle.value.trim()})\n${props.content}`
 
     const payload = {
       stt: props.protocolStt,
@@ -185,6 +199,41 @@ async function doPush() {
 
 .push-info div:last-child {
   margin-bottom: 0;
+}
+
+.push-edit-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.inline-input {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+}
+
+.push-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: #0ea5e9;
+  font-weight: 500;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #0ea5e9;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .push-options {

@@ -68,6 +68,15 @@ const schema = [
         className: 'app-menu__item app-menu__item--copy-source'
       },
       {
+        id: 'menu-edit-upload-image',
+        domId: 'menu-edit-upload-image',
+        labelKey: 'menuEditUploadImage',
+        descriptionKey: 'menuEditUploadImageDesc',
+        action: 'open-upload-image',
+        icon: '🖼️',
+        className: 'app-menu__item app-menu__item--image'
+      },
+      {
         id: 'menu-edit-reset-all',
         domId: 'menu-edit-reset-all',
         labelKey: 'menuEditResetAll',

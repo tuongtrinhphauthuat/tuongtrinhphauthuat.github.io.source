@@ -39,6 +39,7 @@
     <FontSizeDialog v-if="showFontSizeDialog" :position="fontDialogPosition" @close="onFontDialogClose" />
     <AuthorDialog v-if="showAuthorDialog" @close="showAuthorDialog = false" />
     <ShortcutsDialog v-if="showShortcutsDialog" @close="showShortcutsDialog = false" />
+    <UploadImageDialog v-if="showUploadImageDialog" @close="showUploadImageDialog = false" @success="onUploadImageSuccess" />
     <ConfirmDialog v-if="confirmState.visible" :title="confirmTitle" :message="confirmMessage"
       :confirmText="confirmPrimaryText" :cancelText="t('cancel')" @confirm="executeConfirmAction"
       @cancel="confirmState.visible = false" />
@@ -63,6 +64,7 @@ import FontSizeDialog from './FontSizeDialog.vue'
 import AuthorDialog from './AuthorDialog.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import ShortcutsDialog from './ShortcutsDialog.vue'
+import UploadImageDialog from './UploadImageDialog.vue'
 import menuService from '../services/menuService'
 import appLifecycleService from '../services/appLifecycleService'
 
@@ -85,6 +87,7 @@ const showLanguageDialog = ref(false)
 const showFontSizeDialog = ref(false)
 const showAuthorDialog = ref(false)
 const showShortcutsDialog = ref(false)
+const showUploadImageDialog = ref(false)
 const languageDialogPosition = ref({ x: 140, y: 64 })
 const fontDialogPosition = ref({ x: 220, y: 80 })
 const confirmState = ref({ visible: false, type: null })
@@ -329,6 +332,10 @@ function handleMenuAction(payload) {
     case 'open-shortcuts-dialog':
       openShortcutsDialog()
       break
+    case 'open-upload-image':
+      hideFloatingDialogs()
+      showUploadImageDialog.value = true
+      break
     case 'open-edit-sheet':
       openEditLink()
       break
@@ -354,6 +361,10 @@ function openShortcutsDialog() {
   nextTick(() => {
     showShortcutsDialog.value = true
   })
+}
+
+function onUploadImageSuccess() {
+  showUploadImageDialog.value = false
 }
 
 function hideFloatingDialogs() {
