@@ -16,7 +16,18 @@
           <button id="display-btn-copy" class="icon-btn" @click="doCopy" :title="t('copy')">{{ t('copy') }}</button>
           <button id="display-btn-copy-source" class="icon-btn" @click="copySource" :title="t('copySource')">{{
             t('copySource') }}</button>
-          <div id="display-status-text" style="margin-left:auto;color:#64748b">{{ versionsStatus }}</div>
+
+          <div style="margin-left:auto; display:flex; align-items:center; gap:16px">
+            <div id="display-status-text" style="color:#64748b">{{ versionsStatus }}</div>
+            <button
+              v-if="hasEditedStatus"
+              class="icon-btn btn-push"
+              @click="doPush"
+              :title="t('pushVersion')"
+            >
+              ↑ {{ t('pushVersion') }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -78,6 +89,10 @@ const languageDialogPosition = ref({ x: 140, y: 64 })
 const fontDialogPosition = ref({ x: 220, y: 80 })
 const confirmState = ref({ visible: false, type: null })
 const settingsInitialTab = ref('general')
+
+const hasEditedStatus = computed(() => {
+  return store.selectedVersion && store.selectedVersion.isEdited
+})
 
 onMounted(() => {
   store.fetchProtocols()
@@ -187,6 +202,12 @@ function onViewerReset() {
     console.error('viewer reset failed', e)
   }
   versionsStatus.value = t('resetToDefault')
+}
+
+function doPush() {
+  if (viewerRef.value && viewerRef.value.pushVersion) {
+    viewerRef.value.pushVersion()
+  }
 }
 
 const current = computed(() =>
@@ -579,6 +600,20 @@ function onFontDialogClose() {
   padding: 8px;
   border-radius: 8px;
   cursor: pointer
+}
+
+.btn-push {
+  background: linear-gradient(90deg, #0284c7 0%, #eab308 100%);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  padding: 8px 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: opacity 0.2s;
+}
+
+.btn-push:hover {
+  opacity: 0.9;
 }
 
 /* settings modal */
