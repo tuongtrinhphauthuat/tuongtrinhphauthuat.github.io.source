@@ -1,37 +1,38 @@
 <template>
-  <div class="modal-overlay" @click.self="onClose">
-    <div class="modal push-modal">
-      <div class="modal-header">
-        <h3>{{ t('pushDialogTitle') }}</h3>
-        <button class="close-btn" @click="onClose">×</button>
+  <div class="push-overlay" @click.self="$emit('close')">
+    <div class="push-box">
+      <div class="push-header">
+        <h3 class="push-title">{{ t('confirmPushTitle') }}</h3>
+        <button class="close-btn" @click="$emit('close')">×</button>
       </div>
 
-      <div class="modal-body">
-        <p class="modal-desc">{{ t('pushDialogDesc') }}</p>
+      <div class="push-content">
+        <div class="push-info">
+          <div><strong>Protocol:</strong> {{ protocolName }}</div>
+          <div><strong>{{ t('versionTitle') }}:</strong> {{ title }}</div>
+        </div>
 
-        <label class="modal-label">{{ t('pushDialogTitleInput') }}</label>
-        <input class="modal-input" v-model="localTitle" />
-
-        <label class="modal-label">{{ t('pushDialogMode') }}</label>
-        <div class="radio-group">
-          <label class="radio-label">
-            <input type="radio" v-model="mode" value="new" />
-            {{ t('pushDialogModeNew') }}
+        <div class="push-options">
+          <label class="push-option">
+            <input type="radio" v-model="pushMode" value="overwrite" :disabled="!originalColumnName" />
+            <span>{{ t('pushOverwrite') }} <small v-if="originalColumnName">({{ originalColumnName }})</small></span>
           </label>
-          <label class="radio-label" v-if="originalColumnName">
-            <input type="radio" v-model="mode" value="overwrite" />
-            {{ t('pushDialogModeOverwrite') }} ({{ originalColumnName }})
+          <label class="push-option">
+            <input type="radio" v-model="pushMode" value="new" />
+            <span>{{ t('pushNewColumn') }}</span>
           </label>
         </div>
 
-        <div v-if="error" class="error-msg">{{ error }}</div>
+        <div v-if="pushMode === 'new'" class="push-new-col">
+          <label>{{ t('pushNewColumnName') }}</label>
+          <input type="text" v-model="newColumnName" class="push-input" placeholder="e.g. Ver2, Nội dung 2" />
+        </div>
       </div>
 
-      <div class="modal-actions">
-        <button class="btn btn-cancel" @click="onClose" :disabled="loading">{{ t('cancel') }}</button>
-        <button class="btn btn-primary" @click="onPush" :disabled="loading">
-          <span v-if="loading">{{ t('pushing') }}</span>
-          <span v-else>{{ t('pushToSheet') }}</span>
+      <div class="push-footer">
+        <button class="btn btn-cancel" @click="$emit('close')" :disabled="isPushing">{{ t('cancel') }}</button>
+        <button class="btn btn-push" @click="doPush" :disabled="isPushing || !canPush">
+          {{ isPushing ? t('pushing') : t('pushVersion') }}
         </button>
       </div>
     </div>
@@ -39,109 +40,105 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import languageService from '../services/languageService'
+import { ref, computed } from 'vue'
 import { useProtocolStore } from '../stores/protocolStore'
+import { useToastStore } from '../stores/toastStore'
+import languageService from '../services/languageService'
 
 const { t } = languageService
+const store = useProtocolStore()
+const toastStore = useToastStore()
 
 const props = defineProps({
   protocolStt: { type: [String, Number], required: true },
   protocolName: { type: String, required: true },
-  title: { type: String, default: '' },
+  title: { type: String, required: true },
   content: { type: String, required: true },
   originalColumnName: { type: String, default: '' }
 })
 
 const emit = defineEmits(['close', 'success'])
 
-const localTitle = ref(props.title || '')
-const mode = ref('new')
-const loading = ref(false)
-const error = ref('')
+const pushMode = ref(props.originalColumnName ? 'overwrite' : 'new')
+const newColumnName = ref('')
+const isPushing = ref(false)
 
-const store = useProtocolStore()
+const canPush = computed(() => {
+  if (pushMode.value === 'new' && !newColumnName.value.trim()) return false
+  return true
+})
 
-async function onPush() {
-  const appScriptUrl = store.appScriptUrl
-  if (!appScriptUrl) {
-    error.value = t('appScriptUrlMissing')
+async function doPush() {
+  if (!store.appScriptUrl) {
+    toastStore.addToast(t('appScriptUrlMissing'), 'error')
     return
   }
 
-  // Also extract edit sheet URL because it contains the target sheet id
-  let targetSheetUrl = store.editUrl
-  if (!targetSheetUrl) {
-      error.value = "Target Google Sheet URL is missing in Settings."
-      return
-  }
-
-  loading.value = true
-  error.value = ''
-
+  isPushing.value = true
   try {
+    const columnName = pushMode.value === 'overwrite' ? props.originalColumnName : newColumnName.value.trim()
+    const fullContent = `(#${props.title})\n${props.content}`
+
     const payload = {
-      sheetUrl: targetSheetUrl,
       stt: props.protocolStt,
-      name: props.protocolName,
-      title: localTitle.value,
-      content: props.content,
-      mode: mode.value,
-      originalColumnName: props.originalColumnName
+      columnName: columnName,
+      content: fullContent,
+      mode: pushMode.value // 'overwrite' or 'new'
     }
 
-    const response = await fetch(appScriptUrl, {
+    // Using text/plain to avoid CORS preflight, script parses it as JSON
+    const res = await fetch(store.appScriptUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'text/plain'
       },
       body: JSON.stringify(payload)
     })
 
-    const result = await response.json()
+    const text = await res.text()
+    let result = {}
+    try {
+      result = JSON.parse(text)
+    } catch (e) {
+      console.warn('Response is not JSON:', text)
+      if (res.ok) result = { status: 'success' }
+      else result = { status: 'error', message: text }
+    }
+
     if (result.status === 'success') {
       emit('success')
     } else {
-      error.value = result.message || t('pushError')
+      throw new Error(result.message || 'Unknown error from script')
     }
   } catch (err) {
     console.error('Push error:', err)
-    error.value = err.message || t('pushError')
+    toastStore.addToast(`${t('pushFailed')}: ${err.message}`, 'error')
   } finally {
-    loading.value = false
-  }
-}
-
-function onClose() {
-  if (!loading.value) {
-    emit('close')
+    isPushing.value = false
   }
 }
 </script>
 
 <style scoped>
-.modal-overlay {
+.push-overlay {
   position: fixed;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(2, 6, 23, 0.45);
-  z-index: 100005;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 100000;
 }
 
-.push-modal {
-  width: 450px;
-  max-width: 95%;
+.push-box {
   background: #fff;
   border-radius: 12px;
-  overflow: hidden;
+  width: 480px;
+  max-width: 90%;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  display: flex;
-  flex-direction: column;
 }
 
-.modal-header {
+.push-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -149,10 +146,9 @@ function onClose() {
   border-bottom: 1px solid #e2e8f0;
 }
 
-.modal-header h3 {
+.push-title {
   margin: 0;
   font-size: 1.1rem;
-  font-weight: 700;
   color: #0f172a;
 }
 
@@ -162,118 +158,122 @@ function onClose() {
   font-size: 24px;
   color: #64748b;
   cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
+  line-height: 1;
 }
 
 .close-btn:hover {
-  background: #f1f5f9;
   color: #0f172a;
 }
 
-.modal-body {
+.push-content {
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
 }
 
-.modal-desc {
-  margin: 0;
-  color: #475569;
-  font-size: 0.95rem;
-}
-
-.modal-label {
-  font-weight: 600;
-  color: #334155;
-  margin-bottom: 4px;
-  display: block;
-}
-
-.modal-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #cbd5e1;
+.push-info {
+  background: #f8fafc;
+  padding: 12px;
   border-radius: 6px;
+  margin-bottom: 20px;
   font-size: 0.95rem;
-  box-sizing: border-box;
+  color: #334155;
+  border: 1px solid #e2e8f0;
 }
 
-.modal-input:focus {
-  border-color: #0ea5e9;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+.push-info div {
+  margin-bottom: 4px;
 }
 
-.radio-group {
+.push-info div:last-child {
+  margin-bottom: 0;
+}
+
+.push-options {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
-.radio-label {
+.push-option {
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  font-weight: 500;
   color: #1e293b;
 }
 
-.error-msg {
-  color: #dc2626;
-  background: #fef2f2;
-  padding: 10px;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  border: 1px solid #fecaca;
+.push-option small {
+  color: #64748b;
+  font-weight: normal;
 }
 
-.modal-actions {
+.push-new-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-left: 24px;
+}
+
+.push-new-col label {
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.push-input {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.push-input:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+}
+
+.push-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding: 16px 20px;
-  border-top: 1px solid #e2e8f0;
   background: #f8fafc;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 
 .btn {
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid transparent;
 }
 
 .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .btn-cancel {
   background: #fff;
-  border-color: #cbd5e1;
+  border: 1px solid #cbd5e1;
   color: #475569;
 }
 
 .btn-cancel:hover:not(:disabled) {
   background: #f1f5f9;
-  color: #1e293b;
 }
 
-.btn-primary {
-  background: #0ea5e9;
+.btn-push {
+  background: #10b981;
+  border: 1px solid #059669;
   color: #fff;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: #0284c7;
+.btn-push:hover:not(:disabled) {
+  background: #059669;
 }
 </style>

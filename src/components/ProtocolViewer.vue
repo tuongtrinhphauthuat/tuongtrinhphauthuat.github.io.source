@@ -18,10 +18,6 @@
             {{ inheritBadgeText }}
           </span>
           <div class="title-icons" role="toolbar" aria-label="Protocol actions">
-            <!-- Push: open modal to push version to sheet -->
-            <button v-if="selectedVersion && selectedVersion.isEdited" id="viewer-btn-push" class="viewer-icon-btn push"
-              @click.stop.prevent="onPushClick" :title="t('pushVersion')">↑</button>
-
             <!-- Reset: single click opens confirmation dialog. Double-click shortcut removed to prevent accidental resets. -->
             <button v-if="selectedVersion && selectedVersion.isEdited" id="viewer-btn-reset" class="viewer-icon-btn reset"
               @click.stop.prevent="onResetClick" :title="t('resetTooltip')">⟲</button>
@@ -59,7 +55,6 @@
         </div>
       </div>
     </div>
-
     <PushVersionDialog
       v-if="showPushDialog"
       :protocolStt="current?.STT || current?.id || current?.['STT']"
@@ -70,7 +65,6 @@
       @close="showPushDialog = false"
       @success="onPushSuccess"
     />
-
   </div>
 </template>
 
@@ -78,6 +72,7 @@
 import { ref, watch, onMounted, computed, nextTick } from 'vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import ProtocolImages from './ProtocolImages.vue'
+import PushVersionDialog from './PushVersionDialog.vue'
 import { parseBracketsToHtml, applyChoiceInDom, applyVarChoiceInDom, replaceVarTokensInDom, getPlainTextFromContainer } from '../services/bracketService'
 import { htmlToSource } from '../services/bracketReverseService'
 import draftService from '../services/draftService'
@@ -86,10 +81,12 @@ import languageService from '../services/languageService'
 import { filterImagesByVariables } from '../services/imageService'
 
 import { useProtocolStore } from '../stores/protocolStore'
+import { useToastStore } from '../stores/toastStore'
 
 const { t, currentLang } = languageService
 
 const store = useProtocolStore()
+const toastStore = useToastStore()
 const props = defineProps({
   current: { type: Object, default: null },
   selectedVersion: { type: Object, default: null },
@@ -113,7 +110,6 @@ const popupType = ref(null) // 'opt' | 'var' or null
 const activeVarName = ref(null)
 const saveTimer = ref(null)
 const showConfirm = ref(false)
-const showPushDialog = ref(false)
 const editedVersionTitle = ref('')
 const initialSuppress = ref(false)
 
@@ -356,28 +352,6 @@ function onResetClick() {
 function onConfirmReset() {
   showConfirm.value = false
   doReset()
-}
-
-function onPushClick() {
-  if (!store.appScriptUrl) {
-    toastStore.addToast(t('appScriptUrlMissing'), 'error')
-    return
-  }
-  showPushDialog.value = true
-}
-
-function onPushSuccess() {
-  showPushDialog.value = false
-  toastStore.addToast(t('pushSuccess'), 'success')
-
-  // Clear draft when pushed successfully
-  if (props.current) {
-    const id = getDraftId(props.current, props.selectedVersion)
-    draftService.clearDraft(id)
-  }
-
-  // Reload data from the remote source
-  store.fetchProtocols(true)
 }
 
 function mergeOptions(newOpts, newVars) {
@@ -772,12 +746,6 @@ onMounted(() => {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 700;
-}
-
-.viewer-icon-btn.push {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #16a34a;
 }
 
 .viewer-icon-btn.reset {
