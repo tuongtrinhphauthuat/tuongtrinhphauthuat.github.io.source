@@ -1,0 +1,34 @@
+Running bracketService tests...
+Test 1: Nested Brackets
+Nested Result HTML: <span class="bracket-opt" contenteditable="false" data-opt-id="opt-mr7eg8h2-1" data-opt-type="single" data-opt-original="Outer [Inner 1/Inner 2]" data-opt-choices="%5B%5D">Outer <span class="bracket-opt" contenteditable="false" data-opt-id="opt-mr7eg8h3-2" data-opt-type="multi" data-opt-original="Inner 1/Inner 2" data-opt-choices="%5B%22Inner%201%22%2C%22Inner%202%22%5D">Inner 1</span></span>
+Test 2: Variable in Option
+Var Result HTML: <span class="bracket-opt" contenteditable="false" data-opt-id="opt-mr7eg8h8-3" data-opt-type="single" data-opt-original="Option with $myvar$" data-opt-choices="%5B%5D" data-opt-ref-var="myvar">Option with $myvar$</span>
+Var Result Options: [
+  {
+    "id": "opt-mr7eg8h8-3",
+    "type": "single",
+    "original": "Option with $myvar$",
+    "choices": [
+      "Hiện",
+      "Không hiện"
+    ],
+    "selected": 0,
+    "varRef": "myvar"
+  }
+]
+Test 3: User Repro
+Repro HTML: <span class="bracket-opt" contenteditable="false" data-opt-id="opt-mr7eg8h8-4" data-opt-type="multi" data-opt-original="Cắt toàn bộ tuyến giáp hai bên/*Cắt một thùy Trái và eo tuyến giáp/Ngừng phẫu thuật và chờ kết quả giải phẫu bệnh thường" data-opt-choices="%5B%22C%E1%BA%AFt%20to%C3%A0n%20b%E1%BB%99%20tuy%E1%BA%BFn%20gi%C3%A1p%20hai%20b%C3%AAn%22%2C%22C%E1%BA%AFt%20m%E1%BB%99t%20th%C3%B9y%20Tr%C3%A1i%20v%C3%A0%20eo%20tuy%E1%BA%BFn%20gi%C3%A1p%22%2C%22Ng%E1%BB%ABng%20ph%E1%BA%ABu%20thu%E1%BA%ADt%20v%C3%A0%20ch%E1%BB%9D%20k%E1%BA%BFt%20qu%E1%BA%A3%20gi%E1%BA%A3i%20ph%E1%BA%ABu%20b%E1%BB%87nh%20th%C6%B0%E1%BB%9Dng%22%5D">Cắt một thùy Trái và eo tuyến giáp</span>
+Repro Options: [
+  {
+    "id": "opt-mr7eg8h8-4",
+    "type": "multi",
+    "original": "Cắt toàn bộ tuyến giáp hai bên/*Cắt một thùy Trái và eo tuyến giáp/Ngừng phẫu thuật và chờ kết quả giải phẫu bệnh thường",
+    "choices": [
+      "Cắt toàn bộ tuyến giáp hai bên",
+      "Cắt một thùy Trái và eo tuyến giáp",
+      "Ngừng phẫu thuật và chờ kết quả giải phẫu bệnh thường"
+    ],
+    "selected": 1,
+    "varRef": null
+  }
+]

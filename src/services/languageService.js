@@ -140,7 +140,22 @@ const translations = {
         languageUpdatedToast: 'Đã cập nhật ngôn ngữ.',
         fontSizeUpdatedToast: 'Đã cập nhật kích thước chữ.',
         authorDialogButton: 'Đóng',
-        versionTitle: 'Tên phiên bản'
+        versionTitle: 'Tên phiên bản',
+        pushToSheet: 'Đẩy lên Sheet',
+        pushVersion: 'Đẩy bản nháp lên Google Sheet',
+        pushNewVersion: 'Tạo cột mới',
+        pushOverwrite: 'Ghi đè cột cũ',
+        pushSuccess: 'Đã đẩy dữ liệu thành công',
+        pushError: 'Có lỗi xảy ra khi đẩy dữ liệu',
+        appScriptUrl: 'Google Apps Script URL',
+        appScriptUrlMissing: 'Vui lòng cấu hình Google Apps Script URL trong phần Cài đặt.',
+        pushDialogTitle: 'Đẩy (Push) Bản Nháp',
+        pushDialogDesc: 'Nội dung chỉnh sửa sẽ được gửi lên Google Sheet dưới dạng một phiên bản mới hoặc ghi đè phiên bản cũ.',
+        pushDialogTitleInput: 'Tên phiên bản (tùy chọn)',
+        pushDialogMode: 'Chế độ',
+        pushDialogModeNew: 'Tạo cột mới',
+        pushDialogModeOverwrite: 'Ghi đè cột cũ',
+        pushing: 'Đang xử lý...'
     },
     en: {
         selectProtocol: 'Select a protocol to view or edit',
@@ -247,7 +262,22 @@ const translations = {
         languageUpdatedToast: 'Language updated.',
         fontSizeUpdatedToast: 'Font size updated.',
         authorDialogButton: 'Close',
-        versionTitle: 'Version title'
+        versionTitle: 'Version title',
+        pushToSheet: 'Push to Sheet',
+        pushVersion: 'Push draft to Google Sheet',
+        pushNewVersion: 'Create new column',
+        pushOverwrite: 'Overwrite original',
+        pushSuccess: 'Pushed data successfully',
+        pushError: 'An error occurred while pushing data',
+        appScriptUrl: 'Google Apps Script URL',
+        appScriptUrlMissing: 'Please configure Google Apps Script URL in Settings.',
+        pushDialogTitle: 'Push Draft',
+        pushDialogDesc: 'The edited content will be sent to Google Sheet as a new version or overwriting the old one.',
+        pushDialogTitleInput: 'Version Title (Optional)',
+        pushDialogMode: 'Mode',
+        pushDialogModeNew: 'Create new column',
+        pushDialogModeOverwrite: 'Overwrite original',
+        pushing: 'Pushing...'
     }
 };
 

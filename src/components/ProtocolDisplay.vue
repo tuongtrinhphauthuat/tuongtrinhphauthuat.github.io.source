@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <SettingsDialog v-if="showSettings" :source="store.sourceUrl" :edit="store.editUrl"
+    <SettingsDialog v-if="showSettings" :source="store.sourceUrl" :edit="store.editUrl" :appScript="store.appScriptUrl"
       :initialTab="settingsInitialTab" @save="onSettingsSave" @close="showSettings = false" />
 
     <LanguageDialog v-if="showLanguageDialog" :position="languageDialogPosition" @close="onLanguageDialogClose" />
@@ -261,8 +261,10 @@ function onSettingsSave(payload) {
   try {
     const s = (payload && payload.source) ? String(payload.source).trim() : ''
     const e = (payload && payload.edit) ? String(payload.edit).trim() : ''
+    const asUrl = (payload && payload.appScript) ? String(payload.appScript).trim() : ''
     store.setSourceUrl(s)
     store.setEditUrl(e)
+    store.setAppScriptUrl(asUrl)
     showSettings.value = false
     // reload data from new URL
     store.fetchProtocols(true)
