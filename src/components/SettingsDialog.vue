@@ -36,6 +36,13 @@
                 }}</a>
             </div>
 
+            <label class="settings-label">{{ t('appScriptUrl') }}</label>
+            <div class="settings-row">
+              <input class="settings-input" v-model="localAppScript" @click="selectAll" />
+              <a v-if="localAppScript" :href="localAppScript" target="_blank" class="settings-link settings-open">{{ t('open')
+                }}</a>
+            </div>
+
             <div class="settings-hint">{{ t('settingsTip') }}</div>
           </div>
 
@@ -68,12 +75,14 @@ const { t } = languageService
 const props = defineProps({
   source: { type: String, default: '' },
   edit: { type: String, default: '' },
+  appScript: { type: String, default: '' },
   initialTab: { type: String, default: 'general' }
 })
 const emit = defineEmits(['save', 'close'])
 
 const localSource = ref(props.source || '')
 const localEdit = ref(props.edit || '')
+const localAppScript = ref(props.appScript || '')
 const activeTab = ref(props.initialTab || 'general')
 const showConfirmReset = ref(false)
 watch(
@@ -86,11 +95,15 @@ watch(
 
 // Auto-save watchers
 watch(localSource, (val) => {
-  emit('save', { source: val || '', edit: localEdit.value || '' })
+  emit('save', { source: val || '', edit: localEdit.value || '', appScript: localAppScript.value || '' })
 })
 
 watch(localEdit, (val) => {
-  emit('save', { source: localSource.value || '', edit: val || '' })
+  emit('save', { source: localSource.value || '', edit: val || '', appScript: localAppScript.value || '' })
+})
+
+watch(localAppScript, (val) => {
+  emit('save', { source: localSource.value || '', edit: localEdit.value || '', appScript: val || '' })
 })
 
 // Sync props to local state if they change externally
@@ -99,6 +112,9 @@ watch(() => props.source, (v) => {
 })
 watch(() => props.edit, (v) => {
   if (v !== localEdit.value) localEdit.value = v || ''
+})
+watch(() => props.appScript, (v) => {
+  if (v !== localAppScript.value) localAppScript.value = v || ''
 })
 
 function selectAll(ev) {

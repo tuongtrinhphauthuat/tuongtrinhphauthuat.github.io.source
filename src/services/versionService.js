@@ -319,7 +319,8 @@ export async function parseData(url) {
                     displayContent: workingContent,
                     rawContent: workingContent,
                     inherit: inheritMeta,
-                    isInherited: Boolean(inheritMeta && inheritMeta.parentVersionId)
+                    isInherited: Boolean(inheritMeta && inheritMeta.parentVersionId),
+                    columnName: key
                 }
 
                 versions.push(versionEntry)

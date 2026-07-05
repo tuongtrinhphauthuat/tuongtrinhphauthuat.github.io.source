@@ -18,6 +18,10 @@
             {{ inheritBadgeText }}
           </span>
           <div class="title-icons" role="toolbar" aria-label="Protocol actions">
+            <!-- Push: open modal to push version to sheet -->
+            <button v-if="selectedVersion && selectedVersion.isEdited" id="viewer-btn-push" class="viewer-icon-btn push"
+              @click.stop.prevent="onPushClick" :title="t('pushVersion')">↑</button>
+
             <!-- Reset: single click opens confirmation dialog. Double-click shortcut removed to prevent accidental resets. -->
             <button v-if="selectedVersion && selectedVersion.isEdited" id="viewer-btn-reset" class="viewer-icon-btn reset"
               @click.stop.prevent="onResetClick" :title="t('resetTooltip')">⟲</button>
@@ -55,6 +59,18 @@
         </div>
       </div>
     </div>
+
+    <PushVersionDialog
+      v-if="showPushDialog"
+      :protocolStt="current?.STT || current?.id || current?.['STT']"
+      :protocolName="nameOf(current)"
+      :title="editedVersionTitle"
+      :content="htmlToSource(editorHtml)"
+      :originalColumnName="selectedVersion?.columnName"
+      @close="showPushDialog = false"
+      @success="onPushSuccess"
+    />
+
   </div>
 </template>
 
@@ -97,6 +113,7 @@ const popupType = ref(null) // 'opt' | 'var' or null
 const activeVarName = ref(null)
 const saveTimer = ref(null)
 const showConfirm = ref(false)
+const showPushDialog = ref(false)
 const editedVersionTitle = ref('')
 const initialSuppress = ref(false)
 
@@ -339,6 +356,28 @@ function onResetClick() {
 function onConfirmReset() {
   showConfirm.value = false
   doReset()
+}
+
+function onPushClick() {
+  if (!store.appScriptUrl) {
+    toastStore.addToast(t('appScriptUrlMissing'), 'error')
+    return
+  }
+  showPushDialog.value = true
+}
+
+function onPushSuccess() {
+  showPushDialog.value = false
+  toastStore.addToast(t('pushSuccess'), 'success')
+
+  // Clear draft when pushed successfully
+  if (props.current) {
+    const id = getDraftId(props.current, props.selectedVersion)
+    draftService.clearDraft(id)
+  }
+
+  // Reload data from the remote source
+  store.fetchProtocols(true)
 }
 
 function mergeOptions(newOpts, newVars) {
@@ -733,6 +772,12 @@ onMounted(() => {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 700;
+}
+
+.viewer-icon-btn.push {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
 }
 
 .viewer-icon-btn.reset {

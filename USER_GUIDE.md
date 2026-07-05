@@ -190,7 +190,38 @@ Dưới đây là ví dụ mẫu cho một ô trong cột **Nội dung**:
 4.  **[Nội khí quản 2 nòng/1 nòng]**: Lựa chọn đơn giản.
 5.  **$Ben$**: Tự động điền giá trị "Trái" hoặc "Phải" tùy theo lựa chọn ở trên.
 
-## 7. Tips & Tricks
+## 7. Đẩy (Push) Bản nháp lên Google Sheet qua Apps Script
+
+Bạn có thể cấu hình ứng dụng để cho phép người dùng "Push" (đẩy) trực tiếp các phiên bản đã chỉnh sửa lên Google Sheet mà không cần mở file Excel.
+
+### Bước 1: Lấy mã nguồn Apps Script
+Bạn cần copy đoạn mã Google Apps Script.
+Tìm file `scripts/AppScript.js` trong thư mục gốc của dự án hoặc liên hệ quản trị viên để lấy mã này.
+
+### Bước 2: Tạo và Deploy Apps Script
+1. Mở file Google Sheet của bạn.
+2. Trên thanh menu, chọn **Tiện ích mở rộng > Apps Script** (Extensions > Apps Script).
+3. Trong cửa sổ mới mở, dán toàn bộ đoạn mã bạn vừa copy vào (xóa đoạn mã `function myFunction() {}` mặc định đi).
+4. Nhấn nút **Lưu dự án** (biểu tượng đĩa mềm).
+5. Nhấn nút **Triển khai > Trình triển khai mới** (Deploy > New deployment).
+6. Ở góc trên bên trái cửa sổ mới, nhấn biểu tượng bánh răng và chọn **Ứng dụng web** (Web app).
+7. Điền thông tin:
+   - Thêm mô tả: (Tùy chọn) Ví dụ "Push Protocol"
+   - Thực thi với tư cách: **Tôi** (Me)
+   - Người có quyền truy cập: **Bất kỳ ai** (Anyone)
+8. Nhấn **Triển khai** (Deploy). *Lưu ý: Bạn có thể cần cấp quyền truy cập cho script.*
+9. Sau khi triển khai thành công, copy **URL ứng dụng web** (Web app URL).
+
+### Bước 3: Cấu hình trong ứng dụng
+1. Quay lại giao diện phần mềm Protocol.
+2. Mở phần **Cài đặt** (Settings) từ Menu (Góc trái > Tập tin > Cài đặt nguồn dữ liệu).
+3. Dán **URL ứng dụng web** vừa copy vào ô **Google Apps Script URL** (nằm bên dưới Edit URL).
+4. Lưu và đóng cài đặt.
+
+Từ giờ, khi bạn chỉnh sửa một protocol, sẽ xuất hiện nút **Mũi tên lên (Push)** cạnh nút Reset. Nhấn vào đó để đẩy nội dung mới lên Google Sheet (bạn có thể chọn tạo cột mới hoặc ghi đè cột cũ).
+
+
+## 8. Tips & Tricks
 
 1.  **Escaping**: Nếu văn bản của bạn thực sự cần dấu `/` (ví dụ: "1/2"), hãy viết là `//` (ví dụ: `1//2`).
 2.  **Xuống dòng**: Trong Excel, dùng `Alt + Enter` để xuống dòng. Phần mềm sẽ hiển thị đúng các dòng này.

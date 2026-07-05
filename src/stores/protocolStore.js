@@ -15,7 +15,8 @@ export const useProtocolStore = defineStore('protocol', {
     selectedVersion: null,
     // persistable URLs
     sourceUrl: localStorage.getItem('protocol_sourceUrl') || DEFAULT_SOURCE_URL,
-    editUrl: localStorage.getItem('protocol_editUrl') || DEFAULT_EDIT_URL
+    editUrl: localStorage.getItem('protocol_editUrl') || DEFAULT_EDIT_URL,
+    appScriptUrl: localStorage.getItem('protocol_appScriptUrl') || ''
   }),
   actions: {
     async fetchProtocols(force = false) {
@@ -92,6 +93,11 @@ export const useProtocolStore = defineStore('protocol', {
     setEditUrl(url) {
       this.editUrl = url
       try { localStorage.setItem('protocol_editUrl', url) } catch (e) { }
+    },
+
+    setAppScriptUrl(url) {
+      this.appScriptUrl = url
+      try { localStorage.setItem('protocol_appScriptUrl', url) } catch (e) { }
     },
 
     updateVersionTitle(protocolId, oldTitle, newTitle) {
