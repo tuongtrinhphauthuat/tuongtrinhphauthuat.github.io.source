@@ -12,7 +12,10 @@
     "deploy-spk": "node scripts/deploy-spk.js"
   },
   "dependencies": {
+    "@js-draw/material-icons": "^1.33.0",
+    "@js-draw/math": "^1.33.0",
     "fast-xml-parser": "^4.3.6",
+    "js-draw": "^1.33.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.0",
     "xlsx": "^0.18.5"
