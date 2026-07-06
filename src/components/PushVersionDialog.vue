@@ -95,6 +95,7 @@ async function doPush() {
 
     const payload = {
       stt: props.protocolStt,
+      protocolName: props.protocolName,
       columnName: columnName,
       content: fullContent,
       mode: pushMode.value // 'overwrite' or 'new'

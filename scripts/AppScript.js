@@ -20,14 +20,15 @@ function doPost(e) {
     var data = JSON.parse(payloadString);
 
     var stt = data.stt;
+    var protocolName = data.protocolName;
     var columnName = data.columnName;
     var content = data.content;
     var mode = data.mode; // 'overwrite' or 'new'
 
-    if (!stt || !columnName || !content) {
+    if ((!stt && !protocolName) || !columnName || !content) {
       return ContentService.createTextOutput(JSON.stringify({
         status: 'error',
-        message: 'Thiếu dữ liệu: stt, columnName, hoặc content'
+        message: 'Thiếu dữ liệu: stt/protocolName, columnName, hoặc content'
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -38,19 +39,38 @@ function doPost(e) {
     var headerRow = values[0];
     var rowIndex = -1;
     var colIndex = -1;
+    var nameColIndex = -1;
 
-    // Tìm hàng dựa theo STT
-    for (var r = 1; r < values.length; r++) {
-      if (String(values[r][0]) === String(stt)) {
-        rowIndex = r + 1; // Google Sheet index bắt đầu từ 1
+    for (var c = 0; c < headerRow.length; c++) {
+      var h = String(headerRow[c] || '').trim().toLowerCase();
+      if (h === 'tên' || h === 'tên phẫu thuật' || h === 'tên protocol') {
+        nameColIndex = c;
         break;
+      }
+    }
+
+    // Tìm hàng dựa theo Tên trước, nếu không có/không khớp thì tìm theo STT
+    for (var r = 1; r < values.length; r++) {
+      var rowName = nameColIndex !== -1 ? String(values[r][nameColIndex] || '').trim() : '';
+      var pName = String(protocolName || '').trim();
+
+      if (pName && rowName === pName) {
+         rowIndex = r + 1;
+         break;
+      }
+
+      // Fallback: Tìm theo STT nếu có
+      if (rowIndex === -1 && stt && String(values[r][0]) === String(stt)) {
+        rowIndex = r + 1;
+        // Don't break here, keep searching for name match in case STT is duplicated or wrong,
+        // but we'll use this if no name matches.
       }
     }
 
     if (rowIndex === -1) {
       return ContentService.createTextOutput(JSON.stringify({
         status: 'error',
-        message: 'Không tìm thấy STT: ' + stt
+        message: 'Không tìm thấy dòng cho: ' + (protocolName || stt)
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
