@@ -201,6 +201,7 @@ async function doUpload() {
 
     const payload = {
       stt: selectedProtocol.value.STT || selectedProtocol.value.stt,
+      protocolName: selectedProtocol.value.name,
       columnName: 'Hình ảnh', // apps script will handle finding the right column or appending
       content: finalLine,
       imageUrl: imageUrl.value.trim(),
