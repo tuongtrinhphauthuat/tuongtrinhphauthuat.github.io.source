@@ -44,8 +44,8 @@
 
 <script setup>
 import { computed, ref, watch, onBeforeUnmount, nextTick, shallowRef } from 'vue'
-import { Editor, ImageComponent } from 'js-draw';
-import { Mat33 } from '@js-draw/math';
+import { Editor, ImageComponent, BackgroundComponentBackgroundType } from 'js-draw';
+import { Mat33, Color4 } from '@js-draw/math';
 import { MaterialIconProvider } from '@js-draw/material-icons';
 import 'js-draw/styles';
 
@@ -134,6 +134,12 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
       });
       editorInstance.value = newEditor;
       newEditor.addToolbar();
+
+      newEditor.dispatch(newEditor.setBackgroundStyle({
+        color: Color4.transparent,
+        type: BackgroundComponentBackgroundType.SolidColor,
+        autoresize: true,
+      }));
 
       const img = new Image();
       img.crossOrigin = 'anonymous';
