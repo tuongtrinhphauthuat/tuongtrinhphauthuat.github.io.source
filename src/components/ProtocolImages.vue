@@ -13,13 +13,17 @@
     <Teleport to="body">
       <div v-if="isOpen && activeImage" class="protocol-images__lightbox" @click.self="close">
         <button class="protocol-images__lightbox-close" type="button" @click="close" aria-label="Close">&times;</button>
-        <button class="protocol-images__lightbox-copy" type="button" @click="copyActiveImage" title="Copy Image">Copy Ảnh</button>
+        <button class="protocol-images__lightbox-copy" type="button" @click="copyActiveImage" title="Copy Image">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8C6.9 5 6 5.9 6 7v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+          </svg>
+        </button>
 
         <button v-if="images.length > 1" class="protocol-images__lightbox-nav is-prev" type="button" @click.stop="prev"
           aria-label="Previous">&#8249;</button>
 
         <figure class="protocol-images__lightbox-figure">
-          <img :src="activeImage.url" :alt="imageAlt(activeImage, activeIndex)" crossorigin="anonymous" />
+          <div ref="editorContainer" class="protocol-images__lightbox-editor"></div>
           <figcaption v-if="activeImage.description">{{ activeImage.description }}</figcaption>
 
           <div v-if="images.length > 1" class="protocol-images__thumbnails">
@@ -39,7 +43,11 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onBeforeUnmount, nextTick, shallowRef } from 'vue'
+import { Editor, ImageComponent } from 'js-draw';
+import { Mat33 } from '@js-draw/math';
+import { MaterialIconProvider } from '@js-draw/material-icons';
+import 'js-draw/styles';
 
 const props = defineProps({
   images: {
@@ -50,6 +58,8 @@ const props = defineProps({
 
 const isOpen = ref(false)
 const activeIndex = ref(0)
+const editorContainer = ref(null)
+const editorInstance = shallowRef(null)
 
 const hasImages = computed(() => Array.isArray(props.images) && props.images.length > 0)
 
@@ -63,9 +73,34 @@ const activeImage = computed(() => {
 async function copyActiveImage() {
   if (!activeImage.value) return;
   try {
-    const response = await fetch(activeImage.value.url, { mode: 'cors' });
-    if (!response.ok) throw new Error('Network response was not ok');
-    const blob = await response.blob();
+    let blob;
+    if (editorInstance.value) {
+      const svgElement = editorInstance.value.toSVG();
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = url;
+      });
+
+      const canvas = document.createElement('canvas');
+      // Use SVG dimensions or fallback
+      canvas.width = img.width || parseInt(svgElement.getAttribute('width') || '800', 10);
+      canvas.height = img.height || parseInt(svgElement.getAttribute('height') || '600', 10);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      URL.revokeObjectURL(url);
+    } else {
+      const response = await fetch(activeImage.value.url, { mode: 'cors' });
+      if (!response.ok) throw new Error('Network response was not ok');
+      blob = await response.blob();
+    }
 
     // Convert generic blobs to a type that ClipboardItem accepts (usually png)
     // If the image is already a png/jpeg it will likely copy fine in most browsers,
@@ -84,6 +119,34 @@ async function copyActiveImage() {
     }
   }
 }
+
+watch([isOpen, activeImage], async ([open, imgInfo]) => {
+  if (open && imgInfo) {
+    await nextTick();
+    if (editorContainer.value) {
+      if (editorInstance.value) {
+        editorInstance.value.remove();
+      }
+      editorContainer.value.innerHTML = '';
+
+      const newEditor = new Editor(editorContainer.value, {
+        iconProvider: new MaterialIconProvider()
+      });
+      editorInstance.value = newEditor;
+      newEditor.addToolbar();
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = imgInfo.url;
+      img.onload = async () => {
+        if (editorInstance.value === newEditor) {
+          const imageComponent = await ImageComponent.fromImage(img, Mat33.identity);
+          await newEditor.addAndCenterComponents([imageComponent]);
+        }
+      };
+    }
+  }
+}, { immediate: true })
 
 function open(index) {
   if (!hasImages.value) return
@@ -225,18 +288,22 @@ onBeforeUnmount(() => {
 
 .protocol-images__lightbox-figure {
   margin: 0;
-  max-width: 90vw;
-  max-height: 90vh;
+  width: 90vw;
+  height: 90vh;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
   color: #fff;
   text-align: center;
 }
 
-.protocol-images__lightbox-figure img {
-  max-width: 100%;
-  max-height: 80vh;
+.protocol-images__lightbox-editor {
+  width: 100%;
+  flex-grow: 1;
+  background: transparent;
+  overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.45);
 }
@@ -281,32 +348,32 @@ onBeforeUnmount(() => {
 .protocol-images__lightbox-nav.is-next {
   right: 32px;
 }
-</style>
+
 
 .protocol-images__lightbox-copy {
   position: absolute;
   top: 18px;
   right: 74px;
-  background: rgba(15, 23, 42, 0.75);
+  background: transparent;
   color: #fff;
   border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .protocol-images__lightbox-copy:hover {
-  background: rgba(15, 23, 42, 0.95);
+  opacity: 0.8;
 }
 
 .protocol-images__thumbnails {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: auto;
   overflow-x: auto;
   max-width: 100%;
   padding-bottom: 8px;
@@ -339,3 +406,4 @@ onBeforeUnmount(() => {
   height: 100%;
   object-fit: cover;
 }
+</style>
