@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import languageService from '../services/languageService'
 
 const { t } = languageService
@@ -171,6 +171,25 @@ function displayLabel(item, idx) {
 function onInput() {
   // computed filtering is instant — left for future debouncing
 }
+
+const onGlobalKeydown = (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+    e.preventDefault()
+    const input = document.getElementById('sidebar-search-input')
+    if (input) {
+      input.focus()
+      input.select()
+    }
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onGlobalKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onGlobalKeydown)
+})
 </script>
 
 <style scoped>
