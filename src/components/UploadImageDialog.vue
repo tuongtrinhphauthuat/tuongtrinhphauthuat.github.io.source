@@ -2,39 +2,31 @@
   <div class="upload-overlay" @click.self="$emit('close')">
     <div class="upload-box">
       <div class="upload-header">
-        <h3 class="upload-title">Đăng ảnh lên</h3>
+        <h3 class="upload-title">{{ t('uploadImageTitle') }}</h3>
         <button class="close-btn" @click="$emit('close')">×</button>
       </div>
 
       <div class="upload-body">
         <div class="upload-left">
           <div class="form-group">
-            <label>Protocol</label>
-            <div class="custom-select-wrapper">
-              <input type="text" v-model="protocolSearch" placeholder="Tìm kiếm protocol..." class="form-control" @focus="showDropdown = true" @blur="onBlurDropdown" />
-              <ul v-if="showDropdown" class="protocol-dropdown">
-                <li v-for="p in filteredProtocols" :key="p.STT || p.id" @mousedown.prevent="selectProtocol(p)">
-                  {{ p.name }}
-                </li>
-                <li v-if="!filteredProtocols.length" class="no-results">Không tìm thấy</li>
-              </ul>
-            </div>
-            <div v-if="selectedProtocol" class="selected-protocol-info">
-              Đã chọn: <strong>{{ selectedProtocol.name }}</strong>
-            </div>
+            <label>{{ t('uploadProtocolLabel') }}</label>
+            <select v-model="selectedProtocol" class="form-control">
+              <option :value="null">-- {{ t('uploadImageSelectProtocol') }} --</option>
+              <option v-for="p in store.protocols" :key="p.id || p.STT" :value="p">{{ p.name }}</option>
+            </select>
           </div>
 
           <div class="form-group">
-            <label>URL Ảnh</label>
-            <input type="text" v-model="imageUrl" placeholder="Nhập URL ảnh (https://...)" class="form-control" />
+            <label>{{ t('uploadImageUrlLabel') }}</label>
+            <input type="text" v-model="imageUrl" :placeholder="t('uploadImageUrlPlaceholder')" class="form-control" />
           </div>
 
           <div class="form-group">
-            <label>Biến liên kết ảnh (Tuỳ chọn)</label>
+            <label>{{ t('uploadImageConditionLabel') }}</label>
             <div v-for="(cond, index) in conditions" :key="index" class="condition-row" style="margin-bottom: 8px;">
               <select v-model="cond.varName" class="form-control var-select">
-                <option value="">-- Chọn biến --</option>
-                <option v-for="v in availableVars" :key="v.name" :value="v.name">${{ v.name }}$</option>
+                <option value="">-- {{ t('uploadImageSelectVar') }} --</option>
+                <option v-for="v in getAvailableVarsForCondition(index)" :key="v.name" :value="v.name">${{ v.name }}$</option>
               </select>
               <select v-model="cond.op" class="form-control op-select">
                 <option value="=">=</option>
@@ -42,39 +34,39 @@
               </select>
               <template v-if="cond.varName">
                 <select v-if="getChoicesForVar(cond.varName).length > 0" v-model="cond.value" class="form-control value-input">
-                  <option value="">-- Chọn giá trị --</option>
+                  <option value="">-- {{ t('uploadImageSelectValue') }} --</option>
                   <option v-for="choice in getChoicesForVar(cond.varName)" :key="choice" :value="choice">{{ choice }}</option>
                 </select>
-                <input v-else type="text" v-model="cond.value" placeholder="Giá trị..." class="form-control value-input" />
+                <input v-else type="text" v-model="cond.value" :placeholder="t('uploadImageValuePlaceholder')" class="form-control value-input" />
               </template>
-              <input v-else type="text" v-model="cond.value" placeholder="Giá trị..." class="form-control value-input" disabled />
+              <input v-else type="text" v-model="cond.value" :placeholder="t('uploadImageValuePlaceholder')" class="form-control value-input" disabled />
 
               <button class="btn btn-icon" @click="removeCondition(index)" v-if="conditions.length > 1" title="Xoá điều kiện" style="color: #ef4444; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
             </div>
-            <button class="btn btn-add-cond" @click="addCondition" style="margin-top: 5px; font-size: 0.85rem; padding: 4px 8px; background: #e2e8f0; color: #475569; border: none; border-radius: 4px; cursor: pointer;">+ Thêm biến</button>
+            <button class="btn btn-add-cond" @click="addCondition" style="margin-top: 5px; font-size: 0.85rem; padding: 4px 8px; background: #e2e8f0; color: #475569; border: none; border-radius: 4px; cursor: pointer;">+ {{ t('uploadImageAddVar') }}</button>
           </div>
 
           <div class="form-group">
-            <label>Mô tả ảnh</label>
-            <textarea v-model="imageDesc" rows="3" placeholder="Nhập mô tả ảnh..." class="form-control"></textarea>
+            <label>{{ t('uploadImageDescLabel') }}</label>
+            <textarea v-model="imageDesc" rows="3" :placeholder="t('uploadImageDescPlaceholder')" class="form-control"></textarea>
           </div>
         </div>
 
         <div class="upload-right">
           <div class="image-preview" v-if="isValidImageUrl">
             <img :src="imageUrl" alt="Preview" @error="imageError = true" @load="imageError = false" v-show="!imageError" />
-            <div class="error-msg" v-show="imageError">Không thể tải ảnh từ URL này.</div>
+            <div class="error-msg" v-show="imageError">{{ t('uploadImageErrorMsg') }}</div>
           </div>
           <div class="image-placeholder" v-else>
-            <span>Bản xem trước ảnh</span>
+            <span>{{ t('uploadImagePreview') }}</span>
           </div>
         </div>
       </div>
 
       <div class="upload-footer">
-        <button class="btn btn-cancel" @click="$emit('close')" :disabled="isUploading">Hủy</button>
+        <button class="btn btn-cancel" @click="$emit('close')" :disabled="isUploading">{{ t('uploadImageCancelBtn') }}</button>
         <button class="btn btn-upload" @click="doUpload" :disabled="isUploading || !isValid">
-          {{ isUploading ? 'Đang tải lên...' : 'Đăng ảnh' }}
+          {{ isUploading ? t('uploadImageUploading') : t('uploadImageBtn') }}
         </button>
       </div>
     </div>
@@ -86,13 +78,14 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useProtocolStore } from '../stores/protocolStore'
 import { useToastStore } from '../stores/toastStore'
 import { parseBracketsToHtml } from '../services/bracketService'
+import languageService from '../services/languageService'
+
+const t = languageService.t
 
 const emit = defineEmits(['close', 'success'])
 const store = useProtocolStore()
 const toastStore = useToastStore()
 
-const protocolSearch = ref('')
-const showDropdown = ref(false)
 const selectedProtocol = ref(null)
 const imageUrl = ref('')
 const imageDesc = ref('')
@@ -112,29 +105,13 @@ onMounted(() => {
   if (store.selectedId) {
     const p = store.protocols.find(x => String(x.id) === String(store.selectedId) || String(x.STT) === String(store.selectedId) || String(x.stt) === String(store.selectedId))
     if (p) {
-      selectProtocol(p)
+      selectedProtocol.value = p
     }
   }
 })
 
-const filteredProtocols = computed(() => {
-  const q = protocolSearch.value.toLowerCase()
-  return store.protocols.filter(p => {
-    const stt = String(p.STT || p.stt || '').toLowerCase()
-    const name = String(p.name || '').toLowerCase()
-    return stt.includes(q) || name.includes(q)
-  })
-})
 
-function selectProtocol(p) {
-  selectedProtocol.value = p
-  protocolSearch.value = p.name
-  showDropdown.value = false
-}
 
-function onBlurDropdown() {
-  setTimeout(() => { showDropdown.value = false }, 200)
-}
 
 const availableVars = computed(() => {
   const varMap = new Map()
@@ -171,6 +148,16 @@ const availableVars = computed(() => {
   return Array.from(varMap.values()).sort((a, b) => a.name.localeCompare(b.name))
 })
 
+
+function getAvailableVarsForCondition(currentIndex) {
+  const selectedVarsInOtherRows = conditions.value
+    .filter((_, idx) => idx !== currentIndex)
+    .map(c => c.varName)
+    .filter(Boolean)
+
+  return availableVars.value.filter(v => !selectedVarsInOtherRows.includes(v.name))
+}
+
 function getChoicesForVar(varName) {
   const v = availableVars.value.find(x => x.name === varName)
   return v ? v.choices : []
@@ -194,7 +181,7 @@ const isValid = computed(() => {
 
 async function doUpload() {
   if (!store.appScriptUrl) {
-    toastStore.addToast('Chưa cấu hình Google Apps Script URL', 'error')
+    toastStore.addToast(t('appScriptUrlMissing'), 'error')
     return
   }
 
@@ -236,7 +223,7 @@ async function doUpload() {
     }
 
     if (result.status === 'success') {
-      toastStore.addToast('Đăng ảnh thành công!', 'success')
+      toastStore.addToast(t('uploadImageSuccessToast'), 'success')
       store.fetchProtocols(true) // refresh
       emit('success')
     } else {
@@ -244,7 +231,7 @@ async function doUpload() {
     }
   } catch (err) {
     console.error(err)
-    toastStore.addToast(`Lỗi đăng ảnh: ${err.message}`, 'error')
+    toastStore.addToast(`${t('uploadImageErrorToast')}: ${err.message}`, 'error')
   } finally {
     isUploading.value = false
   }
@@ -265,7 +252,7 @@ async function doUpload() {
 .upload-box {
   background: #fff;
   border-radius: 12px;
-  width: 900px;
+  width: 80vw;
   max-width: 95vw;
   max-height: 90vh;
   display: flex;
@@ -302,7 +289,7 @@ async function doUpload() {
 }
 
 .upload-left {
-  flex: 1;
+  flex: 3;
   padding: 20px;
   border-right: 1px solid #e2e8f0;
   overflow-y: auto;
