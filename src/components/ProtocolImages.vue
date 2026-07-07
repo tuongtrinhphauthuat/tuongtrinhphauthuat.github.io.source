@@ -13,11 +13,6 @@
     <Teleport to="body">
       <div v-if="isOpen && activeImage" class="protocol-images__lightbox" @click.self="close">
         <button class="protocol-images__lightbox-close" type="button" @click="close" aria-label="Close">&times;</button>
-        <button class="protocol-images__lightbox-copy" type="button" @click="copyActiveImage" title="Copy Image">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8C6.9 5 6 5.9 6 7v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-          </svg>
-        </button>
 
         <button v-if="images.length > 1" class="protocol-images__lightbox-nav is-prev" type="button" @click.stop="prev"
           aria-label="Previous">&#8249;</button>
@@ -44,8 +39,8 @@
 
 <script setup>
 import { computed, ref, watch, onBeforeUnmount, nextTick, shallowRef } from 'vue'
-import { Editor, ImageComponent } from 'js-draw';
-import { Mat33 } from '@js-draw/math';
+import { Editor, ImageComponent, TextTool, BackgroundComponentBackgroundType } from 'js-draw';
+import { Mat33, Color4 } from '@js-draw/math';
 import { MaterialIconProvider } from '@js-draw/material-icons';
 import 'js-draw/styles';
 
@@ -130,20 +125,172 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
       editorContainer.value.innerHTML = '';
 
       const newEditor = new Editor(editorContainer.value, {
-        iconProvider: new MaterialIconProvider()
+        iconProvider: new MaterialIconProvider(),
+        wheelEventsEnabled: false,
       });
       editorInstance.value = newEditor;
-      newEditor.addToolbar();
+      const toolbar = newEditor.addToolbar();
 
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = imgInfo.url;
-      img.onload = async () => {
-        if (editorInstance.value === newEditor) {
-          const imageComponent = await ImageComponent.fromImage(img, Mat33.identity);
-          await newEditor.addAndCenterComponents([imageComponent]);
+      toolbar.addActionButton({
+        label: 'Copy Image',
+        icon: newEditor.icons.makeCopyIcon()
+      }, async () => {
+        try {
+          if (!editorInstance.value) return;
+          const svgElement = editorInstance.value.toSVG();
+          const svgString = new XMLSerializer().serializeToString(svgElement);
+          const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(svgBlob);
+
+          const img = new Image();
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = url;
+          });
+
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width || parseInt(svgElement.getAttribute('width') || '800', 10);
+          canvas.height = img.height || parseInt(svgElement.getAttribute('height') || '600', 10);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+          URL.revokeObjectURL(url);
+
+          const item = new ClipboardItem({ [blob.type]: blob });
+          await navigator.clipboard.write([item]);
+          alert('Đã copy ảnh vào Clipboard!');
+        } catch (err) {
+          console.error('Error copying image: ', err);
+          try {
+            await navigator.clipboard.writeText(activeImage.value.url);
+            alert('Không thể copy ảnh do chính sách bảo mật trình duyệt (CORS). Đã copy URL ảnh thay thế!');
+          } catch(fallbackErr) {
+             alert('Lỗi khi copy ảnh!');
+          }
         }
-      };
+      });
+
+      toolbar.addActionButton({
+        label: 'Download Image',
+        icon: newEditor.icons.makeSaveIcon()
+      }, () => {
+        if (!editorInstance.value) return;
+        const dataUrl = editorInstance.value.toDataURL();
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = 'edited-image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+
+      // Set white background, solid color, not autoresizing
+      newEditor.dispatch(
+        newEditor.setBackgroundStyle({
+          color: Color4.white,
+          type: BackgroundComponentBackgroundType.SolidColor,
+          autoresize: false,
+        }),
+        false
+      );
+
+      // Set Text tool as default
+      const textTools = newEditor.toolController.getMatchingTools(TextTool);
+      if (textTools.length > 0) {
+        textTools[0].setEnabled(true);
+      }
+
+      // Auto-save edited state
+      newEditor.notifier.on('update', () => {
+        if (editorInstance.value === newEditor && imgInfo.url) {
+           try {
+             const cacheKey = `js-draw-cache-${imgInfo.url}`;
+             const svgElem = newEditor.toSVG();
+             const svgString = new XMLSerializer().serializeToString(svgElem);
+             localStorage.setItem(cacheKey, JSON.stringify({
+               timestamp: Date.now(),
+               svg: svgString
+             }));
+           } catch (e) {
+             console.warn('Failed to save to localStorage, it might be full:', e);
+           }
+        }
+      });
+
+      const cacheKey = `js-draw-cache-${imgInfo.url}`;
+      let cachedData = null;
+      try {
+        const raw = localStorage.getItem(cacheKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // Check if it's less than 1 hour old (3600000 ms)
+          if (Date.now() - parsed.timestamp < 3600000) {
+             cachedData = parsed;
+          } else {
+             localStorage.removeItem(cacheKey); // clear expired cache
+          }
+        }
+      } catch (e) {
+        console.error('Failed to read cache:', e);
+      }
+
+      if (cachedData && cachedData.svg) {
+         newEditor.loadFromSVG(cachedData.svg);
+         // Ensure default tool is text even after loading from SVG
+         const textTools = newEditor.toolController.getMatchingTools(TextTool);
+         if (textTools.length > 0) {
+           textTools[0].setEnabled(true);
+         }
+      } else {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = imgInfo.url;
+        img.onload = async () => {
+          if (editorInstance.value === newEditor) {
+            // Define canvas width/height manually since we want a fixed square coordinate system
+            // say 1000x1000
+            const canvasSize = 1000;
+            const imgWidth = img.width || 1000;
+            const imgHeight = img.height || 1000;
+
+            // Scale the image down (or up) to fit inside the square canvas
+            const scale = Math.min(canvasSize / imgWidth, canvasSize / imgHeight) * 0.95; // 5% padding
+
+            // Calculate translation to center the scaled image
+            const scaledWidth = imgWidth * scale;
+            const scaledHeight = imgHeight * scale;
+            const dx = (canvasSize - scaledWidth) / 2;
+            const dy = (canvasSize - scaledHeight) / 2;
+
+            // Apply scale and translation
+            let transform = Mat33.scaling2D(scale, { x: 0, y: 0 });
+            transform = Mat33.translation({ x: dx, y: dy }).rightMul(transform);
+
+            const imageComponent = await ImageComponent.fromImage(img, transform);
+
+            // Add the image to the editor without altering the viewport
+            await newEditor.dispatch(newEditor.image.addElement(imageComponent), false);
+
+            // Force the image editor export area to be exactly our canvasSize square
+            newEditor.dispatch(newEditor.image.setImportExportRect({ x: 0, y: 0, w: canvasSize, h: canvasSize }), false);
+
+            // Center viewport on our 1000x1000 box
+            newEditor.viewport.resetTransform();
+            const bbox = newEditor.getImportExportRect();
+            const screenSize = newEditor.viewport.getScreenRectSize();
+            // Scale so the box fits entirely in the screen with a tiny bit of margin, but basically fills
+            const viewportScale = Math.min(screenSize.x / bbox.w, screenSize.y / bbox.h);
+            const vpTransform = Mat33.scaling2D(viewportScale, { x: 0, y: 0 });
+            const screenDx = (screenSize.x - bbox.w * viewportScale) / 2;
+            const screenDy = (screenSize.y - bbox.h * viewportScale) / 2;
+            newEditor.viewport.updateTransform(
+              Mat33.translation({ x: screenDx, y: screenDy }).rightMul(vpTransform)
+            );
+          }
+        };
+      }
     }
   }
 }, { immediate: true })
@@ -287,13 +434,14 @@ onBeforeUnmount(() => {
 }
 
 .protocol-images__lightbox-figure {
-  margin: 0;
-  width: 90vw;
-  height: 90vh;
+  margin: auto;
+  width: 85vh; /* adjust this as needed */
+  max-width: 90vw;
+  height: 85vh; /* make it roughly square based on height */
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 12px;
   color: #fff;
   text-align: center;
@@ -301,11 +449,15 @@ onBeforeUnmount(() => {
 
 .protocol-images__lightbox-editor {
   width: 100%;
-  flex-grow: 1;
+  height: 100%;
+  aspect-ratio: 1 / 1;
   background: transparent;
   overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .protocol-images__lightbox-figure figcaption {
@@ -349,25 +501,6 @@ onBeforeUnmount(() => {
   right: 32px;
 }
 
-
-.protocol-images__lightbox-copy {
-  position: absolute;
-  top: 18px;
-  right: 74px;
-  background: transparent;
-  color: #fff;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.protocol-images__lightbox-copy:hover {
-  opacity: 0.8;
-}
 
 .protocol-images__thumbnails {
   display: flex;
