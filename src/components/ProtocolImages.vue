@@ -44,6 +44,167 @@ import { Mat33, Color4 } from '@js-draw/math';
 import { MaterialIconProvider } from '@js-draw/material-icons';
 import 'js-draw/styles';
 
+/** Create a standard download icon (arrow pointing down into a tray) */
+function createDownloadIcon() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '24');
+  svg.setAttribute('height', '24');
+  svg.setAttribute('fill', 'none');
+  svg.innerHTML = '<path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z" fill="currentColor"/>';
+  return svg;
+}
+
+/**
+ * Add transparent overlays around the image area to block drawing outside.
+ * Returns a cleanup function.
+ */
+function setupDrawingBounds(editor, imgWidth, imgHeight) {
+  const root = editor.getRootElement();
+  // Remove any previous overlays
+  root.querySelectorAll('.drawing-bounds-overlay').forEach(el => el.remove());
+
+  const createOverlay = (style) => {
+    const div = document.createElement('div');
+    div.className = 'drawing-bounds-overlay';
+    div.style.cssText = 'position:absolute;z-index:10;pointer-events:auto;background:transparent;' + style;
+    return div;
+  };
+
+  // Create 4 border overlays - they start covering the entire editor,
+  // and we'll resize them once the image position is known.
+  const topOverlay = createOverlay('top:0;left:0;right:0;');
+  const bottomOverlay = createOverlay('left:0;right:0;');
+  const leftOverlay = createOverlay('left:0;');
+  const rightOverlay = createOverlay('right:0;');
+
+  const updateOverlayPositions = () => {
+    const bbox = editor.getImportExportRect();
+    const topLeft = editor.viewport.canvasToScreen({ x: bbox.x, y: bbox.y });
+    const bottomRight = editor.viewport.canvasToScreen({ x: bbox.x + bbox.w, y: bbox.y + bbox.h });
+
+    const imgTop = Math.max(0, topLeft.y);
+    const imgBottom = Math.max(0, bottomRight.y);
+    const imgLeft = Math.max(0, topLeft.x);
+    const imgRight = Math.max(0, bottomRight.x);
+
+    topOverlay.style.height = imgTop + 'px';
+    bottomOverlay.style.top = imgBottom + 'px';
+    bottomOverlay.style.bottom = '0';
+    leftOverlay.style.top = imgTop + 'px';
+    leftOverlay.style.width = imgLeft + 'px';
+    leftOverlay.style.bottom = '0';
+    rightOverlay.style.left = imgRight + 'px';
+    rightOverlay.style.top = imgTop + 'px';
+    rightOverlay.style.bottom = '0';
+  };
+
+  // Use createHTMLOverlay to insert into the editor's overlay system
+  const topHandle = editor.createHTMLOverlay(topOverlay);
+  const bottomHandle = editor.createHTMLOverlay(bottomOverlay);
+  const leftHandle = editor.createHTMLOverlay(leftOverlay);
+  const rightHandle = editor.createHTMLOverlay(rightOverlay);
+
+  // Update positions initially
+  setTimeout(updateOverlayPositions, 50);
+
+  // Listen for viewport changes to update overlay positions
+  const wheelHandler = () => setTimeout(updateOverlayPositions, 10);
+  root.addEventListener('wheel', wheelHandler, { passive: true });
+  const observer = new ResizeObserver(() => setTimeout(updateOverlayPositions, 10));
+  observer.observe(root);
+
+  return () => {
+    topHandle.remove();
+    bottomHandle.remove();
+    leftHandle.remove();
+    rightHandle.remove();
+    root.removeEventListener('wheel', wheelHandler);
+    observer.disconnect();
+  };
+}
+
+/**
+ * Load an image from a URL and place it centered into the editor.
+ * Uses fetch+blob for reliability, and addAndCenterComponents for proper placement.
+ * Resolves with the image dimensions.
+ */
+async function loadImageIntoEditor(editor, url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+
+  const img = await new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Image failed to load'));
+    image.src = objectUrl;
+  });
+
+  const imgWidth = img.width || 800;
+  const imgHeight = img.height || 600;
+
+  const imageComponent = await ImageComponent.fromImage(img, Mat33.identity());
+
+  // Set import/export rect to match image dimensions
+  editor.dispatch(editor.image.setImportExportRect({ x: 0, y: 0, w: imgWidth, h: imgHeight }), false);
+
+  // Add and center the image in one step (official js-draw API)
+  await editor.addAndCenterComponents([imageComponent], false);
+
+  URL.revokeObjectURL(objectUrl);
+  return { imgWidth, imgHeight };
+}
+
+/**
+ * Lock canvas panning — only allow zoom (Ctrl+wheel), not scroll/pan.
+ * Returns a cleanup function.
+ */
+function lockCanvasPan(editor) {
+  const root = editor.getRootElement();
+
+  const handleWheel = (e) => {
+    // Allow zoom (Ctrl+wheel or pinch-to-zoom which sets ctrlKey)
+    if (e.ctrlKey || e.metaKey) {
+      // Re-center after zoom to prevent drift
+      setTimeout(() => {
+        try {
+          const bbox = editor.getImportExportRect();
+          const screenSize = editor.viewport.getScreenRectSize();
+          const scale = editor.viewport.getScaleFactor();
+          const scaledW = bbox.w * scale;
+          const scaledH = bbox.h * scale;
+          const dx = (screenSize.x - scaledW) / 2;
+          const dy = (screenSize.y - scaledH) / 2;
+          editor.viewport.resetTransform(
+            Mat33.translation({ x: dx, y: dy }).rightMul(Mat33.scaling2D(scale, { x: 0, y: 0 }))
+          );
+        } catch (_) { /* ignore errors during cleanup */ }
+      }, 20);
+      return;
+    }
+    // Block regular scroll (pan) to keep image centered
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  root.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+  return () => root.removeEventListener('wheel', handleWheel, { capture: true });
+}
+
+/**
+ * Set up both drawing bounds and pan lock, returning a combined cleanup function.
+ */
+function setupEditorGuards(editor, imgWidth, imgHeight) {
+  const cleanBounds = setupDrawingBounds(editor, imgWidth, imgHeight);
+  const cleanPan = lockCanvasPan(editor);
+  return () => {
+    cleanBounds();
+    cleanPan();
+  };
+}
+
 const props = defineProps({
   images: {
     type: Array,
@@ -55,6 +216,7 @@ const isOpen = ref(false)
 const activeIndex = ref(0)
 const editorContainer = ref(null)
 const editorInstance = shallowRef(null)
+const cleanupDrawingBounds = ref(null)
 
 const hasImages = computed(() => Array.isArray(props.images) && props.images.length > 0)
 
@@ -119,6 +281,11 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
   if (open && imgInfo) {
     await nextTick();
     if (editorContainer.value) {
+      // Clean up previous drawing bounds overlays
+      if (cleanupDrawingBounds.value) {
+        cleanupDrawingBounds.value();
+        cleanupDrawingBounds.value = null;
+      }
       if (editorInstance.value) {
         editorInstance.value.remove();
       }
@@ -126,7 +293,6 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
 
       const newEditor = new Editor(editorContainer.value, {
         iconProvider: new MaterialIconProvider(),
-        wheelEventsEnabled: false,
       });
       editorInstance.value = newEditor;
       const toolbar = newEditor.addToolbar();
@@ -174,7 +340,7 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
 
       toolbar.addActionButton({
         label: 'Download Image',
-        icon: newEditor.icons.makeSaveIcon()
+        icon: createDownloadIcon()
       }, () => {
         if (!editorInstance.value) return;
         const dataUrl = editorInstance.value.toDataURL();
@@ -236,6 +402,8 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
         console.error('Failed to read cache:', e);
       }
 
+      // Clean up any previous drawing bounds before loading new image
+
       if (cachedData && cachedData.svg) {
          newEditor.loadFromSVG(cachedData.svg);
          // Ensure default tool is text even after loading from SVG
@@ -243,36 +411,22 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
          if (textTools.length > 0) {
            textTools[0].setEnabled(true);
          }
+         // Set up drawing bounds and pan lock for cached SVG
+         setTimeout(() => {
+           const bbox = newEditor.getImportExportRect();
+           cleanupDrawingBounds.value = setupEditorGuards(newEditor, bbox.w, bbox.h);
+         }, 100);
       } else {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = imgInfo.url;
-        img.onload = async () => {
+        // Load image via fetch for reliability (avoids CORS issues with canvas rendering)
+        loadImageIntoEditor(newEditor, imgInfo.url).then(({ imgWidth, imgHeight }) => {
           if (editorInstance.value === newEditor) {
-            const imgWidth = img.width || 800;
-            const imgHeight = img.height || 600;
-
-            const transform = Mat33.identity();
-            const imageComponent = await ImageComponent.fromImage(img, transform);
-
-            // Add the image to the editor without altering the viewport
-            await newEditor.dispatch(newEditor.image.addElement(imageComponent), false);
-
-            // Force the image editor export area to be exactly our image dimensions
-            newEditor.dispatch(newEditor.image.setImportExportRect({ x: 0, y: 0, w: imgWidth, h: imgHeight }), false);
-
-            newEditor.viewport.resetTransform();
-            const bbox = newEditor.getImportExportRect();
-            const screenSize = newEditor.viewport.getScreenRectSize();
-            const viewportScale = Math.min(screenSize.x / bbox.w, screenSize.y / bbox.h);
-            const vpTransform = Mat33.scaling2D(viewportScale, { x: 0, y: 0 });
-            const screenDx = (screenSize.x - bbox.w * viewportScale) / 2;
-            const screenDy = (screenSize.y - bbox.h * viewportScale) / 2;
-            newEditor.viewport.updateTransform(
-              Mat33.translation({ x: screenDx, y: screenDy }).rightMul(vpTransform)
-            );
+            cleanupDrawingBounds.value = setupEditorGuards(newEditor, imgWidth, imgHeight);
           }
-        };
+        }).catch(() => {
+          if (editorInstance.value === newEditor) {
+            cleanupDrawingBounds.value = setupEditorGuards(newEditor, 800, 600);
+          }
+        });
       }
     }
   }
@@ -322,6 +476,11 @@ watch(isOpen, value => {
     window.addEventListener('keydown', onKeydown)
   } else {
     window.removeEventListener('keydown', onKeydown)
+    // Clean up drawing bounds when lightbox closes
+    if (cleanupDrawingBounds.value) {
+      cleanupDrawingBounds.value();
+      cleanupDrawingBounds.value = null;
+    }
   }
 })
 
@@ -449,6 +608,41 @@ onBeforeUnmount(() => {
   position: absolute !important;
   top: 0;
   left: 0;
+}
+
+/* Make toolbar icons smaller */
+.protocol-images__lightbox-editor :deep(.toolbar-root) {
+  --toolbar-button-height: min(16vh, 44px);
+}
+
+.protocol-images__lightbox-editor :deep(.toolbar-button),
+.protocol-images__lightbox-editor :deep(.toolbar-toolContainer > .toolbar-button) {
+  min-width: 34px;
+  max-width: 80px;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.protocol-images__lightbox-editor :deep(.toolbar-icon) {
+  min-width: 16px;
+  min-height: 16px;
+  max-width: 24px;
+  max-height: 24px;
+}
+
+.protocol-images__lightbox-editor :deep(.toolbar-root .toolbar-icon) {
+  flex-shrink: 1;
+  width: 22px;
+}
+
+.protocol-images__lightbox-editor :deep(.toolbar-edge-toolbar) {
+  --toolbar-button-height: min(16vh, 40px);
+}
+
+.protocol-images__lightbox-editor :deep(.toolbar-edge-toolbar .toolbar-toolContainer:not(.no-icon):not(.label-inline) .toolbar-button) {
+  width: auto;
+  min-width: 34px;
+  padding: 4px;
 }
 
 .protocol-images__lightbox-figure figcaption {
