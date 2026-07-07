@@ -249,38 +249,21 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
         img.src = imgInfo.url;
         img.onload = async () => {
           if (editorInstance.value === newEditor) {
-            // Define canvas width/height manually since we want a fixed square coordinate system
-            // say 1000x1000
-            const canvasSize = 1000;
-            const imgWidth = img.width || 1000;
-            const imgHeight = img.height || 1000;
+            const imgWidth = img.width || 800;
+            const imgHeight = img.height || 600;
 
-            // Scale the image down (or up) to fit inside the square canvas
-            const scale = Math.min(canvasSize / imgWidth, canvasSize / imgHeight) * 0.95; // 5% padding
-
-            // Calculate translation to center the scaled image
-            const scaledWidth = imgWidth * scale;
-            const scaledHeight = imgHeight * scale;
-            const dx = (canvasSize - scaledWidth) / 2;
-            const dy = (canvasSize - scaledHeight) / 2;
-
-            // Apply scale and translation
-            let transform = Mat33.scaling2D(scale, { x: 0, y: 0 });
-            transform = Mat33.translation({ x: dx, y: dy }).rightMul(transform);
-
+            const transform = Mat33.identity();
             const imageComponent = await ImageComponent.fromImage(img, transform);
 
             // Add the image to the editor without altering the viewport
             await newEditor.dispatch(newEditor.image.addElement(imageComponent), false);
 
-            // Force the image editor export area to be exactly our canvasSize square
-            newEditor.dispatch(newEditor.image.setImportExportRect({ x: 0, y: 0, w: canvasSize, h: canvasSize }), false);
+            // Force the image editor export area to be exactly our image dimensions
+            newEditor.dispatch(newEditor.image.setImportExportRect({ x: 0, y: 0, w: imgWidth, h: imgHeight }), false);
 
-            // Center viewport on our 1000x1000 box
             newEditor.viewport.resetTransform();
             const bbox = newEditor.getImportExportRect();
             const screenSize = newEditor.viewport.getScreenRectSize();
-            // Scale so the box fits entirely in the screen with a tiny bit of margin, but basically fills
             const viewportScale = Math.min(screenSize.x / bbox.w, screenSize.y / bbox.h);
             const vpTransform = Mat33.scaling2D(viewportScale, { x: 0, y: 0 });
             const screenDx = (screenSize.x - bbox.w * viewportScale) / 2;
@@ -450,7 +433,6 @@ onBeforeUnmount(() => {
 .protocol-images__lightbox-editor {
   width: 100%;
   height: 100%;
-  aspect-ratio: 1 / 1;
   background: transparent;
   overflow: hidden;
   border-radius: 12px;
@@ -458,6 +440,15 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+.protocol-images__lightbox-editor :deep(.imageEditorContainer) {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  top: 0;
+  left: 0;
 }
 
 .protocol-images__lightbox-figure figcaption {
