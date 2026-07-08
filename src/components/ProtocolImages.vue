@@ -46,10 +46,11 @@
 
 <script setup>
 import { computed, ref, watch, onBeforeUnmount, nextTick, shallowRef } from 'vue'
-import { Editor, ImageComponent, PenTool, BackgroundComponentBackgroundType, TextComponent } from 'js-draw';
+import { Editor, ImageComponent, PenTool, SelectionTool, BackgroundComponentBackgroundType, TextComponent } from 'js-draw';
 import { Mat33, Color4, Rect2, Vec2 } from '@js-draw/math';
 import { MaterialIconProvider } from '@js-draw/material-icons';
 import 'js-draw/styles';
+import { editorConfig } from '../configs/editorConfig';
 
 /** Create a standard download icon (arrow pointing down into a tray) */
 function createDownloadIcon() {
@@ -162,14 +163,22 @@ async function loadImageIntoEditor(editor, url) {
 
     console.log('Image element created, dimensions:', img.width, img.height);
 
-    const imgWidth = img.width || 800;
-    const imgHeight = img.height || 600;
+    const targetWidth = editorConfig.canvas.defaultWidth;
+    const targetHeight = editorConfig.canvas.defaultHeight;
+    const imgWidth = img.width || targetWidth;
+    const imgHeight = img.height || targetHeight;
 
-    const imageComponent = await ImageComponent.fromImage(img, Mat33.identity);
+    // Calculate scale factors to resize image to target canvas dimensions
+    const scaleX = targetWidth / imgWidth;
+    const scaleY = targetHeight / imgHeight;
+    // We can use scaling2D from origin
+    const scaleMatrix = Mat33.scaling2D(Vec2.of(scaleX, scaleY));
+
+    const imageComponent = await ImageComponent.fromImage(img, scaleMatrix);
     console.log('ImageComponent created:', imageComponent);
 
-    // Set import/export rect to exactly match image dimensions
-    const imgRect = new Rect2(0, 0, imgWidth, imgHeight);
+    // Set import/export rect to exactly match configured target dimensions
+    const imgRect = new Rect2(0, 0, targetWidth, targetHeight);
     editor.dispatch(editor.image.setImportExportRect(imgRect), false);
 
     // Add image at exactly (0,0) with no arbitrary centering transformations
@@ -187,7 +196,7 @@ async function loadImageIntoEditor(editor, url) {
     // Allow zooming in and zooming out to fit both small and large images perfectly
     editor.dispatchNoAnnounce(editor.viewport.zoomTo(bbox, true, true), false);
 
-    return { imgWidth, imgHeight };
+    return { imgWidth: targetWidth, imgHeight: targetHeight };
   } catch (err) {
     console.error('Error in loadImageIntoEditor:', err);
     throw err;
@@ -502,25 +511,41 @@ function addTextStamp(text) {
   if (!editorInstance.value) return;
   const editor = editorInstance.value;
 
+  const key = text === 'TRÁI' ? 'left' : 'right';
+  const conf = editorConfig.stamps[key] || editorConfig.stamps.left;
+
   const textStyle = {
-    size: 40,
-    fontFamily: 'Arial, sans-serif',
-    fontWeight: 'bold',
-    renderingStyle: { fill: Color4.red },
+    size: conf.fontSize,
+    fontFamily: conf.fontFamily,
+    fontWeight: conf.fontWeight,
+    renderingStyle: { fill: conf.color },
   };
 
-  // Determine an offset position so multiple stamps don't completely overlap
-  // For simplicity, we just put it roughly near the top-left of the original image box
   const bbox = editor.getImportExportRect();
-  // Math.random() gives a slight variation so if they click twice it's visually distinct
-  const yOffset = text === 'TRÁI' ? 40 : 90;
+  const x = bbox.x + bbox.w - conf.offsetFromRight;
+  const y = bbox.y + conf.offsetFromTop;
 
-  const positioning = Mat33.translation(Vec2.of(bbox.x + 40, bbox.y + yOffset));
+  const positioning = Mat33.translation(Vec2.of(x, y));
   const textComp = TextComponent.fromLines([text], positioning, textStyle);
 
   editor.dispatch(
       editor.image.addComponent(textComp)
   );
+
+  // Auto-switch to selection tool and select the newly added text
+  const selectionTools = editor.toolController.getMatchingTools(SelectionTool);
+  if (selectionTools.length > 0) {
+    const selTool = selectionTools[0];
+    selTool.setEnabled(true);
+
+    // Temporarily disable tool scrolling behavior so the canvas doesn't drift
+    // when setting selection programmatically
+    selTool.setSelection([textComp]);
+
+    // We optionally restore the original zoom to prevent the selection tool from shifting the viewport
+    const viewportBbox = editor.getImportExportRect();
+    editor.dispatchNoAnnounce(editor.viewport.zoomTo(viewportBbox, true, true), false);
+  }
 }
 
 const onKeydown = event => {
