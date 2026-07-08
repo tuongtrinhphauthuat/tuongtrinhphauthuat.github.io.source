@@ -39,8 +39,8 @@
 
 <script setup>
 import { computed, ref, watch, onBeforeUnmount, nextTick, shallowRef } from 'vue'
-import { Editor, ImageComponent, TextTool, BackgroundComponentBackgroundType } from 'js-draw';
-import { Mat33, Color4, Rect2 } from '@js-draw/math';
+import { Editor, ImageComponent, TextTool, BackgroundComponentBackgroundType, TextComponent } from 'js-draw';
+import { Mat33, Color4, Rect2, Vec2 } from '@js-draw/math';
 import { MaterialIconProvider } from '@js-draw/material-icons';
 import 'js-draw/styles';
 
@@ -67,7 +67,8 @@ function setupDrawingBounds(editor, imgWidth, imgHeight) {
   const createOverlay = (style) => {
     const div = document.createElement('div');
     div.className = 'drawing-bounds-overlay';
-    div.style.cssText = 'position:absolute;z-index:10;pointer-events:auto;background:transparent;' + style;
+    // pointer-events:none prevents this overlay from blocking clicks on the toolbar or other menus
+    div.style.cssText = 'position:absolute;z-index:10;pointer-events:none;background:transparent;' + style;
     return div;
   };
 
@@ -318,6 +319,47 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
       });
       editorInstance.value = newEditor;
       const toolbar = newEditor.addToolbar();
+
+      // Text "TRÁI"
+      toolbar.addActionButton({
+        label: 'Thêm chữ TRÁI',
+        icon: document.createElement('span') // we create a flat button instead of an icon
+      }, () => {
+        if (!editorInstance.value) return;
+        const textStyle = {
+          size: 40,
+          fontFamily: 'Arial, sans-serif',
+          fontWeight: 'bold',
+          renderingStyle: { fill: Color4.red },
+        };
+        // Position at top-left
+        const positioning = Mat33.translation(Vec2.of(40, 40));
+        const textComp = TextComponent.fromLines(['TRÁI'], positioning, textStyle);
+        editorInstance.value.dispatch(
+           editorInstance.value.image.addComponent(textComp)
+        );
+      }).container.innerHTML = '<span style="font-weight:bold; font-size: 14px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; height: 100%;">TRÁI</span>';
+
+      // Text "PHẢI"
+      toolbar.addActionButton({
+        label: 'Thêm chữ PHẢI',
+        icon: document.createElement('span') // flat button
+      }, () => {
+        if (!editorInstance.value) return;
+        const textStyle = {
+          size: 40,
+          fontFamily: 'Arial, sans-serif',
+          fontWeight: 'bold',
+          renderingStyle: { fill: Color4.red },
+        };
+        // Position at top-left right under TRÁI (or shifted)
+        // Adjust translation if needed; top-left corner
+        const positioning = Mat33.translation(Vec2.of(40, 90));
+        const textComp = TextComponent.fromLines(['PHẢI'], positioning, textStyle);
+        editorInstance.value.dispatch(
+           editorInstance.value.image.addComponent(textComp)
+        );
+      }).container.innerHTML = '<span style="font-weight:bold; font-size: 14px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; height: 100%;">PHẢI</span>';
 
       toolbar.addActionButton({
         label: 'Copy Image',
