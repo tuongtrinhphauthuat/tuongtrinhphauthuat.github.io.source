@@ -19,6 +19,13 @@
 
         <figure class="protocol-images__lightbox-figure">
           <div ref="editorContainer" class="protocol-images__lightbox-editor"></div>
+
+          <!-- Custom floating stamp menu for text overlay -->
+          <div class="protocol-images__stamp-menu">
+            <button type="button" class="protocol-images__stamp-btn" @click.stop="addTextStamp('TRÁI')">TRÁI</button>
+            <button type="button" class="protocol-images__stamp-btn" @click.stop="addTextStamp('PHẢI')">PHẢI</button>
+          </div>
+
           <figcaption v-if="activeImage.description">{{ activeImage.description }}</figcaption>
 
           <div v-if="images.length > 1" class="protocol-images__thumbnails">
@@ -320,47 +327,6 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
       editorInstance.value = newEditor;
       const toolbar = newEditor.addToolbar();
 
-      // Text "TRÁI"
-      toolbar.addActionButton({
-        label: 'Thêm chữ TRÁI',
-        icon: document.createElement('span') // we create a flat button instead of an icon
-      }, () => {
-        if (!editorInstance.value) return;
-        const textStyle = {
-          size: 40,
-          fontFamily: 'Arial, sans-serif',
-          fontWeight: 'bold',
-          renderingStyle: { fill: Color4.red },
-        };
-        // Position at top-left
-        const positioning = Mat33.translation(Vec2.of(40, 40));
-        const textComp = TextComponent.fromLines(['TRÁI'], positioning, textStyle);
-        editorInstance.value.dispatch(
-           editorInstance.value.image.addComponent(textComp)
-        );
-      }).container.innerHTML = '<span style="font-weight:bold; font-size: 14px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; height: 100%;">TRÁI</span>';
-
-      // Text "PHẢI"
-      toolbar.addActionButton({
-        label: 'Thêm chữ PHẢI',
-        icon: document.createElement('span') // flat button
-      }, () => {
-        if (!editorInstance.value) return;
-        const textStyle = {
-          size: 40,
-          fontFamily: 'Arial, sans-serif',
-          fontWeight: 'bold',
-          renderingStyle: { fill: Color4.red },
-        };
-        // Position at top-left right under TRÁI (or shifted)
-        // Adjust translation if needed; top-left corner
-        const positioning = Mat33.translation(Vec2.of(40, 90));
-        const textComp = TextComponent.fromLines(['PHẢI'], positioning, textStyle);
-        editorInstance.value.dispatch(
-           editorInstance.value.image.addComponent(textComp)
-        );
-      }).container.innerHTML = '<span style="font-weight:bold; font-size: 14px; padding: 4px; display: inline-flex; align-items: center; justify-content: center; height: 100%;">PHẢI</span>';
-
       toolbar.addActionButton({
         label: 'Copy Image',
         icon: newEditor.icons.makeCopyIcon()
@@ -519,6 +485,31 @@ function prev() {
 function imageAlt(image, index) {
   if (!image) return `Protocol image ${index + 1}`
   return image.description || `Protocol image ${index + 1}`
+}
+
+function addTextStamp(text) {
+  if (!editorInstance.value) return;
+  const editor = editorInstance.value;
+
+  const textStyle = {
+    size: 40,
+    fontFamily: 'Arial, sans-serif',
+    fontWeight: 'bold',
+    renderingStyle: { fill: Color4.red },
+  };
+
+  // Determine an offset position so multiple stamps don't completely overlap
+  // For simplicity, we just put it roughly near the top-left of the original image box
+  const bbox = editor.getImportExportRect();
+  // Math.random() gives a slight variation so if they click twice it's visually distinct
+  const yOffset = text === 'TRÁI' ? 40 : 90;
+
+  const positioning = Mat33.translation(Vec2.of(bbox.x + 40, bbox.y + yOffset));
+  const textComp = TextComponent.fromLines([text], positioning, textStyle);
+
+  editor.dispatch(
+      editor.image.addComponent(textComp)
+  );
 }
 
 const onKeydown = event => {
@@ -751,6 +742,40 @@ onBeforeUnmount(() => {
 
 .protocol-images__lightbox-nav.is-next {
   right: 32px;
+}
+
+.protocol-images__stamp-menu {
+  position: absolute;
+  right: 16px;
+  top: 76px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 100001;
+}
+
+.protocol-images__stamp-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.protocol-images__stamp-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.protocol-images__stamp-btn:active {
+  transform: translateY(0);
 }
 
 
