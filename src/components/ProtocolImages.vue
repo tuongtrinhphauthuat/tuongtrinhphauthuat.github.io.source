@@ -40,7 +40,7 @@
 <script setup>
 import { computed, ref, watch, onBeforeUnmount, nextTick, shallowRef } from 'vue'
 import { Editor, ImageComponent, TextTool, BackgroundComponentBackgroundType } from 'js-draw';
-import { Mat33, Color4 } from '@js-draw/math';
+import { Mat33, Color4, Rect2 } from '@js-draw/math';
 import { MaterialIconProvider } from '@js-draw/material-icons';
 import 'js-draw/styles';
 
@@ -130,31 +130,48 @@ function setupDrawingBounds(editor, imgWidth, imgHeight) {
  * Resolves with the image dimensions.
  */
 async function loadImageIntoEditor(editor, url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
-  const blob = await response.blob();
-  const objectUrl = URL.createObjectURL(blob);
+  console.log('Loading image into editor:', url);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+    const blob = await response.blob();
+    console.log('Fetched image blob size:', blob.size);
 
-  const img = await new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('Image failed to load'));
-    image.src = objectUrl;
-  });
+    // Use FileReader to convert to base64 Data URL to avoid revoking Object URL issues
+    // and potential CORS tainting on canvas if js-draw needs it later
+    const base64Data = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
 
-  const imgWidth = img.width || 800;
-  const imgHeight = img.height || 600;
+    const img = await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = (e) => reject(new Error('Image failed to load: ' + e));
+      image.src = base64Data;
+    });
 
-  const imageComponent = await ImageComponent.fromImage(img, Mat33.identity());
+    console.log('Image element created, dimensions:', img.width, img.height);
 
-  // Set import/export rect to match image dimensions
-  editor.dispatch(editor.image.setImportExportRect({ x: 0, y: 0, w: imgWidth, h: imgHeight }), false);
+    const imgWidth = img.width || 800;
+    const imgHeight = img.height || 600;
 
-  // Add and center the image in one step (official js-draw API)
-  await editor.addAndCenterComponents([imageComponent], false);
+    const imageComponent = await ImageComponent.fromImage(img, Mat33.identity);
+    console.log('ImageComponent created:', imageComponent);
 
-  URL.revokeObjectURL(objectUrl);
-  return { imgWidth, imgHeight };
+    // Set import/export rect to match image dimensions
+    editor.dispatch(editor.image.setImportExportRect(new Rect2(0, 0, imgWidth, imgHeight)), false);
+
+    // Add and center the image in one step (official js-draw API)
+    await editor.addAndCenterComponents([imageComponent], false);
+    console.log('Added and centered components');
+
+    return { imgWidth, imgHeight };
+  } catch (err) {
+    console.error('Error in loadImageIntoEditor:', err);
+    throw err;
+  }
 }
 
 /**
