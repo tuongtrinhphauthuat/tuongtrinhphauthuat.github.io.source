@@ -19,6 +19,13 @@
 
         <figure class="protocol-images__lightbox-figure">
           <div ref="editorContainer" class="protocol-images__lightbox-editor"></div>
+
+          <!-- Custom floating stamp menu for text overlay -->
+          <div class="protocol-images__stamp-menu">
+            <button type="button" class="protocol-images__stamp-btn" @click.stop="addTextStamp('TRÁI')">TRÁI</button>
+            <button type="button" class="protocol-images__stamp-btn" @click.stop="addTextStamp('PHẢI')">PHẢI</button>
+          </div>
+
           <figcaption v-if="activeImage.description">{{ activeImage.description }}</figcaption>
 
           <div v-if="images.length > 1" class="protocol-images__thumbnails">
@@ -39,8 +46,8 @@
 
 <script setup>
 import { computed, ref, watch, onBeforeUnmount, nextTick, shallowRef } from 'vue'
-import { Editor, ImageComponent, TextTool, BackgroundComponentBackgroundType } from 'js-draw';
-import { Mat33, Color4, Rect2 } from '@js-draw/math';
+import { Editor, ImageComponent, PenTool, BackgroundComponentBackgroundType, TextComponent } from 'js-draw';
+import { Mat33, Color4, Rect2, Vec2 } from '@js-draw/math';
 import { MaterialIconProvider } from '@js-draw/material-icons';
 import 'js-draw/styles';
 
@@ -67,7 +74,8 @@ function setupDrawingBounds(editor, imgWidth, imgHeight) {
   const createOverlay = (style) => {
     const div = document.createElement('div');
     div.className = 'drawing-bounds-overlay';
-    div.style.cssText = 'position:absolute;z-index:10;pointer-events:auto;background:transparent;' + style;
+    // pointer-events:none prevents this overlay from blocking clicks on the toolbar or other menus
+    div.style.cssText = 'position:absolute;z-index:10;pointer-events:none;background:transparent;' + style;
     return div;
   };
 
@@ -384,10 +392,10 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
         false
       );
 
-      // Set Text tool as default
-      const textTools = newEditor.toolController.getMatchingTools(TextTool);
-      if (textTools.length > 0) {
-        textTools[0].setEnabled(true);
+      // Set Pen tool as default
+      const penTools = newEditor.toolController.getMatchingTools(PenTool);
+      if (penTools.length > 0) {
+        penTools[0].setEnabled(true);
       }
 
       // Auto-save edited state
@@ -428,10 +436,10 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
 
       if (cachedData && cachedData.svg) {
          newEditor.loadFromSVG(cachedData.svg);
-         // Ensure default tool is text even after loading from SVG
-         const textTools = newEditor.toolController.getMatchingTools(TextTool);
-         if (textTools.length > 0) {
-           textTools[0].setEnabled(true);
+         // Ensure default tool is pen even after loading from SVG
+         const penTools = newEditor.toolController.getMatchingTools(PenTool);
+         if (penTools.length > 0) {
+           penTools[0].setEnabled(true);
          }
          // Set up drawing bounds and pan lock for cached SVG
          setTimeout(() => {
@@ -477,6 +485,31 @@ function prev() {
 function imageAlt(image, index) {
   if (!image) return `Protocol image ${index + 1}`
   return image.description || `Protocol image ${index + 1}`
+}
+
+function addTextStamp(text) {
+  if (!editorInstance.value) return;
+  const editor = editorInstance.value;
+
+  const textStyle = {
+    size: 40,
+    fontFamily: 'Arial, sans-serif',
+    fontWeight: 'bold',
+    renderingStyle: { fill: Color4.red },
+  };
+
+  // Determine an offset position so multiple stamps don't completely overlap
+  // For simplicity, we just put it roughly near the top-left of the original image box
+  const bbox = editor.getImportExportRect();
+  // Math.random() gives a slight variation so if they click twice it's visually distinct
+  const yOffset = text === 'TRÁI' ? 40 : 90;
+
+  const positioning = Mat33.translation(Vec2.of(bbox.x + 40, bbox.y + yOffset));
+  const textComp = TextComponent.fromLines([text], positioning, textStyle);
+
+  editor.dispatch(
+      editor.image.addComponent(textComp)
+  );
 }
 
 const onKeydown = event => {
@@ -709,6 +742,40 @@ onBeforeUnmount(() => {
 
 .protocol-images__lightbox-nav.is-next {
   right: 32px;
+}
+
+.protocol-images__stamp-menu {
+  position: absolute;
+  right: 16px;
+  top: 76px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 100001;
+}
+
+.protocol-images__stamp-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.protocol-images__stamp-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.protocol-images__stamp-btn:active {
+  transform: translateY(0);
 }
 
 
