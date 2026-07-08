@@ -21,7 +21,7 @@
           <div ref="editorContainer" class="protocol-images__lightbox-editor"></div>
 
           <!-- Custom floating stamp menu for text overlay -->
-          <div class="protocol-images__stamp-menu">
+          <div v-if="isEditorReady" class="protocol-images__stamp-menu">
             <button type="button" class="protocol-images__stamp-btn" @click.stop="addTextStamp('TRÁI')">TRÁI</button>
             <button type="button" class="protocol-images__stamp-btn" @click.stop="addTextStamp('PHẢI')">PHẢI</button>
           </div>
@@ -168,12 +168,19 @@ async function loadImageIntoEditor(editor, url) {
     const imageComponent = await ImageComponent.fromImage(img, Mat33.identity);
     console.log('ImageComponent created:', imageComponent);
 
-    // Set import/export rect to match image dimensions
-    editor.dispatch(editor.image.setImportExportRect(new Rect2(0, 0, imgWidth, imgHeight)), false);
+    // Set import/export rect to exactly match image dimensions
+    const imgRect = new Rect2(0, 0, imgWidth, imgHeight);
+    editor.dispatch(editor.image.setImportExportRect(imgRect), false);
 
-    // Add and center the image in one step (official js-draw API)
-    await editor.addAndCenterComponents([imageComponent], false);
-    console.log('Added and centered components');
+    // Add image at exactly (0,0) with no arbitrary centering transformations
+    editor.dispatch(editor.image.addComponent(imageComponent), false);
+    console.log('Added components');
+
+    // Manually force viewport bounds update so zoomTo knows exact size
+    const root = editor.getRootElement();
+    if (root) {
+      editor.viewport.updateScreenSize(Vec2.of(root.clientWidth, root.clientHeight));
+    }
 
     // Make the viewport size perfectly zoom to fit the image on screen
     const bbox = editor.getImportExportRect();
@@ -247,6 +254,7 @@ const activeIndex = ref(0)
 const editorContainer = ref(null)
 const editorInstance = shallowRef(null)
 const cleanupDrawingBounds = ref(null)
+const isEditorReady = ref(false)
 
 const hasImages = computed(() => Array.isArray(props.images) && props.images.length > 0)
 
@@ -445,16 +453,19 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
          setTimeout(() => {
            const bbox = newEditor.getImportExportRect();
            cleanupDrawingBounds.value = setupEditorGuards(newEditor, bbox.w, bbox.h);
+           isEditorReady.value = true;
          }, 100);
       } else {
         // Load image via fetch for reliability (avoids CORS issues with canvas rendering)
         loadImageIntoEditor(newEditor, imgInfo.url).then(({ imgWidth, imgHeight }) => {
           if (editorInstance.value === newEditor) {
             cleanupDrawingBounds.value = setupEditorGuards(newEditor, imgWidth, imgHeight);
+            isEditorReady.value = true;
           }
         }).catch(() => {
           if (editorInstance.value === newEditor) {
             cleanupDrawingBounds.value = setupEditorGuards(newEditor, 800, 600);
+            isEditorReady.value = true;
           }
         });
       }
@@ -531,6 +542,7 @@ watch(isOpen, value => {
     window.addEventListener('keydown', onKeydown)
   } else {
     window.removeEventListener('keydown', onKeydown)
+    isEditorReady.value = false;
     // Clean up drawing bounds when lightbox closes
     if (cleanupDrawingBounds.value) {
       cleanupDrawingBounds.value();
@@ -755,9 +767,9 @@ onBeforeUnmount(() => {
 }
 
 .protocol-images__stamp-btn {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(15, 23, 42, 0.85); /* Dark background so text stands out */
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(15, 23, 42, 0.95);
   border-radius: 8px;
   padding: 8px 16px;
   font-size: 16px;
@@ -769,7 +781,7 @@ onBeforeUnmount(() => {
 }
 
 .protocol-images__stamp-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(15, 23, 42, 1);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 }
