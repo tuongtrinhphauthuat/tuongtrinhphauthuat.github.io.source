@@ -46,7 +46,7 @@
 
 <script setup>
 import { computed, ref, watch, onBeforeUnmount, nextTick, shallowRef } from 'vue'
-import { Editor, ImageComponent, TextTool, BackgroundComponentBackgroundType, TextComponent } from 'js-draw';
+import { Editor, ImageComponent, PenTool, BackgroundComponentBackgroundType, TextComponent } from 'js-draw';
 import { Mat33, Color4, Rect2, Vec2 } from '@js-draw/math';
 import { MaterialIconProvider } from '@js-draw/material-icons';
 import 'js-draw/styles';
@@ -392,10 +392,10 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
         false
       );
 
-      // Set Text tool as default
-      const textTools = newEditor.toolController.getMatchingTools(TextTool);
-      if (textTools.length > 0) {
-        textTools[0].setEnabled(true);
+      // Set Pen tool as default
+      const penTools = newEditor.toolController.getMatchingTools(PenTool);
+      if (penTools.length > 0) {
+        penTools[0].setEnabled(true);
       }
 
       // Auto-save edited state
@@ -436,10 +436,10 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
 
       if (cachedData && cachedData.svg) {
          newEditor.loadFromSVG(cachedData.svg);
-         // Ensure default tool is text even after loading from SVG
-         const textTools = newEditor.toolController.getMatchingTools(TextTool);
-         if (textTools.length > 0) {
-           textTools[0].setEnabled(true);
+         // Ensure default tool is pen even after loading from SVG
+         const penTools = newEditor.toolController.getMatchingTools(PenTool);
+         if (penTools.length > 0) {
+           penTools[0].setEnabled(true);
          }
          // Set up drawing bounds and pan lock for cached SVG
          setTimeout(() => {
