@@ -584,19 +584,21 @@ onBeforeUnmount(() => {
 .protocol-images__lightbox {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.85); /* Darker backdrop for better contrast */
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
   z-index: 100000;
+  transition: opacity 0.3s ease;
 }
 
 .protocol-images__lightbox-figure {
   margin: auto;
-  width: 85vh; /* adjust this as needed */
+  width: 85vh; /* default square-ish layout for desktop */
   max-width: 90vw;
-  height: 85vh; /* make it roughly square based on height */
+  height: 85vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -604,6 +606,7 @@ onBeforeUnmount(() => {
   gap: 12px;
   color: #fff;
   text-align: center;
+  position: relative;
 }
 
 .protocol-images__lightbox-editor {
@@ -612,7 +615,7 @@ onBeforeUnmount(() => {
   background: transparent;
   overflow: hidden;
   border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.45);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -627,22 +630,22 @@ onBeforeUnmount(() => {
   left: 0;
 }
 
-/* Make toolbar icons smaller */
+/* Make toolbar icons scale better */
 .protocol-images__lightbox-editor :deep(.toolbar-root) {
-  --toolbar-button-height: min(16vh, 44px);
+  --toolbar-button-height: min(12vh, 44px);
 }
 
 .protocol-images__lightbox-editor :deep(.toolbar-button),
 .protocol-images__lightbox-editor :deep(.toolbar-toolContainer > .toolbar-button) {
   min-width: 34px;
-  max-width: 80px;
-  padding-left: 2px;
-  padding-right: 2px;
+  max-width: 60px;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 .protocol-images__lightbox-editor :deep(.toolbar-icon) {
-  min-width: 16px;
-  min-height: 16px;
+  min-width: 18px;
+  min-height: 18px;
   max-width: 24px;
   max-height: 24px;
 }
@@ -653,7 +656,7 @@ onBeforeUnmount(() => {
 }
 
 .protocol-images__lightbox-editor :deep(.toolbar-edge-toolbar) {
-  --toolbar-button-height: min(16vh, 40px);
+  --toolbar-button-height: min(12vh, 40px);
 }
 
 .protocol-images__lightbox-editor :deep(.toolbar-edge-toolbar .toolbar-toolContainer:not(.no-icon):not(.label-inline) .toolbar-button) {
