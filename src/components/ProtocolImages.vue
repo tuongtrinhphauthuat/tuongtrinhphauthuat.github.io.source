@@ -167,6 +167,11 @@ async function loadImageIntoEditor(editor, url) {
     await editor.addAndCenterComponents([imageComponent], false);
     console.log('Added and centered components');
 
+    // Make the viewport size perfectly zoom to fit the image on screen
+    const bbox = editor.getImportExportRect();
+    // Allow zooming in and zooming out to fit both small and large images perfectly
+    editor.dispatchNoAnnounce(editor.viewport.zoomTo(bbox, true, true), false);
+
     return { imgWidth, imgHeight };
   } catch (err) {
     console.error('Error in loadImageIntoEditor:', err);
