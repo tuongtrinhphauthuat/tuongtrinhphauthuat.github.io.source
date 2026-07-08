@@ -40,7 +40,7 @@
 <script setup>
 import { computed, ref, watch, onBeforeUnmount, nextTick, shallowRef } from 'vue'
 import { Editor, ImageComponent, TextTool, BackgroundComponentBackgroundType } from 'js-draw';
-import { Mat33, Color4 } from '@js-draw/math';
+import { Mat33, Color4, Rect2 } from '@js-draw/math';
 import { MaterialIconProvider } from '@js-draw/material-icons';
 import 'js-draw/styles';
 
@@ -130,31 +130,53 @@ function setupDrawingBounds(editor, imgWidth, imgHeight) {
  * Resolves with the image dimensions.
  */
 async function loadImageIntoEditor(editor, url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
-  const blob = await response.blob();
-  const objectUrl = URL.createObjectURL(blob);
+  console.log('Loading image into editor:', url);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+    const blob = await response.blob();
+    console.log('Fetched image blob size:', blob.size);
 
-  const img = await new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('Image failed to load'));
-    image.src = objectUrl;
-  });
+    // Use FileReader to convert to base64 Data URL to avoid revoking Object URL issues
+    // and potential CORS tainting on canvas if js-draw needs it later
+    const base64Data = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
 
-  const imgWidth = img.width || 800;
-  const imgHeight = img.height || 600;
+    const img = await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = (e) => reject(new Error('Image failed to load: ' + e));
+      image.src = base64Data;
+    });
 
-  const imageComponent = await ImageComponent.fromImage(img, Mat33.identity());
+    console.log('Image element created, dimensions:', img.width, img.height);
 
-  // Set import/export rect to match image dimensions
-  editor.dispatch(editor.image.setImportExportRect({ x: 0, y: 0, w: imgWidth, h: imgHeight }), false);
+    const imgWidth = img.width || 800;
+    const imgHeight = img.height || 600;
 
-  // Add and center the image in one step (official js-draw API)
-  await editor.addAndCenterComponents([imageComponent], false);
+    const imageComponent = await ImageComponent.fromImage(img, Mat33.identity);
+    console.log('ImageComponent created:', imageComponent);
 
-  URL.revokeObjectURL(objectUrl);
-  return { imgWidth, imgHeight };
+    // Set import/export rect to match image dimensions
+    editor.dispatch(editor.image.setImportExportRect(new Rect2(0, 0, imgWidth, imgHeight)), false);
+
+    // Add and center the image in one step (official js-draw API)
+    await editor.addAndCenterComponents([imageComponent], false);
+    console.log('Added and centered components');
+
+    // Make the viewport size perfectly zoom to fit the image on screen
+    const bbox = editor.getImportExportRect();
+    // Allow zooming in and zooming out to fit both small and large images perfectly
+    editor.dispatchNoAnnounce(editor.viewport.zoomTo(bbox, true, true), false);
+
+    return { imgWidth, imgHeight };
+  } catch (err) {
+    console.error('Error in loadImageIntoEditor:', err);
+    throw err;
+  }
 }
 
 /**
@@ -567,19 +589,21 @@ onBeforeUnmount(() => {
 .protocol-images__lightbox {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.85); /* Darker backdrop for better contrast */
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
   z-index: 100000;
+  transition: opacity 0.3s ease;
 }
 
 .protocol-images__lightbox-figure {
   margin: auto;
-  width: 85vh; /* adjust this as needed */
+  width: 85vh; /* default square-ish layout for desktop */
   max-width: 90vw;
-  height: 85vh; /* make it roughly square based on height */
+  height: 85vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -587,6 +611,7 @@ onBeforeUnmount(() => {
   gap: 12px;
   color: #fff;
   text-align: center;
+  position: relative;
 }
 
 .protocol-images__lightbox-editor {
@@ -595,7 +620,7 @@ onBeforeUnmount(() => {
   background: transparent;
   overflow: hidden;
   border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.45);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -610,22 +635,22 @@ onBeforeUnmount(() => {
   left: 0;
 }
 
-/* Make toolbar icons smaller */
+/* Make toolbar icons scale better */
 .protocol-images__lightbox-editor :deep(.toolbar-root) {
-  --toolbar-button-height: min(16vh, 44px);
+  --toolbar-button-height: min(12vh, 44px);
 }
 
 .protocol-images__lightbox-editor :deep(.toolbar-button),
 .protocol-images__lightbox-editor :deep(.toolbar-toolContainer > .toolbar-button) {
   min-width: 34px;
-  max-width: 80px;
-  padding-left: 2px;
-  padding-right: 2px;
+  max-width: 60px;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 .protocol-images__lightbox-editor :deep(.toolbar-icon) {
-  min-width: 16px;
-  min-height: 16px;
+  min-width: 18px;
+  min-height: 18px;
   max-width: 24px;
   max-height: 24px;
 }
@@ -636,7 +661,7 @@ onBeforeUnmount(() => {
 }
 
 .protocol-images__lightbox-editor :deep(.toolbar-edge-toolbar) {
-  --toolbar-button-height: min(16vh, 40px);
+  --toolbar-button-height: min(12vh, 40px);
 }
 
 .protocol-images__lightbox-editor :deep(.toolbar-edge-toolbar .toolbar-toolContainer:not(.no-icon):not(.label-inline) .toolbar-button) {
