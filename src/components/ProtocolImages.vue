@@ -51,6 +51,7 @@ import { Mat33, Color4, Rect2, Vec2 } from '@js-draw/math';
 import { MaterialIconProvider } from '@js-draw/material-icons';
 import 'js-draw/styles';
 import { editorConfig } from '../configs/editorConfig';
+import { useToastStore } from '../stores/toastStore';
 
 /** Create a standard download icon (arrow pointing down into a tray) */
 function createDownloadIcon() {
@@ -260,6 +261,7 @@ const props = defineProps({
 
 const isOpen = ref(false)
 const activeIndex = ref(0)
+const toastStore = useToastStore()
 const editorContainer = ref(null)
 const editorInstance = shallowRef(null)
 const cleanupDrawingBounds = ref(null)
@@ -311,15 +313,15 @@ async function copyActiveImage() {
     // but some browsers only accept image/png for clipboard write.
     const item = new ClipboardItem({ [blob.type]: blob });
     await navigator.clipboard.write([item]);
-    alert('Đã copy ảnh vào Clipboard!');
+    toastStore.addToast('Đã copy ảnh vào Clipboard!', 'success');
   } catch (err) {
     console.error('Error copying image: ', err);
     // Fallback if CORS prevents blob fetching or ClipboardItem is unsupported
     try {
       await navigator.clipboard.writeText(activeImage.value.url);
-      alert('Không thể copy ảnh do chính sách bảo mật trình duyệt (CORS). Đã copy URL ảnh thay thế!');
+      toastStore.addToast('Không thể copy ảnh do chính sách bảo mật trình duyệt (CORS). Đã copy URL ảnh thay thế!', 'error');
     } catch(fallbackErr) {
-       alert('Lỗi khi copy ảnh!');
+       toastStore.addToast('Lỗi khi copy ảnh!', 'error');
     }
   }
 }
@@ -373,14 +375,14 @@ watch([isOpen, activeImage], async ([open, imgInfo]) => {
 
           const item = new ClipboardItem({ [blob.type]: blob });
           await navigator.clipboard.write([item]);
-          alert('Đã copy ảnh vào Clipboard!');
+          toastStore.addToast('Đã copy ảnh vào Clipboard!', 'success');
         } catch (err) {
           console.error('Error copying image: ', err);
           try {
             await navigator.clipboard.writeText(activeImage.value.url);
-            alert('Không thể copy ảnh do chính sách bảo mật trình duyệt (CORS). Đã copy URL ảnh thay thế!');
+            toastStore.addToast('Không thể copy ảnh do chính sách bảo mật trình duyệt (CORS). Đã copy URL ảnh thay thế!', 'error');
           } catch(fallbackErr) {
-             alert('Lỗi khi copy ảnh!');
+             toastStore.addToast('Lỗi khi copy ảnh!', 'error');
           }
         }
       });
