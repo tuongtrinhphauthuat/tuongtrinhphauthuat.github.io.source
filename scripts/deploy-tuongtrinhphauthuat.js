@@ -6,7 +6,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const distDir = path.resolve(__dirname, 'dist');
+// ===== CNAME configuration =====
+const CNAME = 'tuongtrinhphauthuat.longnguctimmach.com';
+
+const distDir = path.resolve(__dirname, '..', 'dist');
 const repoUrl = 'https://github.com/tuongtrinhphauthuat/tuongtrinhphauthuat.github.io.git';
 
 console.log('🚀 Starting deployment...');
@@ -17,7 +20,7 @@ try {
     execSync('npm run build', { stdio: 'inherit' });
 
     // ✅ Add CNAME file to dist
-    fs.writeFileSync(path.join(distDir, 'CNAME'), 'tuongtrinhphauthuat.longnguctimmach.com');
+    fs.writeFileSync(path.join(distDir, 'CNAME'), CNAME);
     
     // 2. Navigate to dist directory
     process.chdir(distDir);

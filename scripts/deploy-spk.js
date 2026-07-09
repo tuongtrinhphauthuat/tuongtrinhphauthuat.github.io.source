@@ -3,6 +3,9 @@ import fs from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
 
+// ===== CNAME configuration =====
+const CNAME = 'ttptspk.github.io'
+
 const repoUrl = 'https://github.com/ttptspk/ttptspk.github.io'
 const repoDirName = 'ttptspk.github.io'
 
@@ -47,6 +50,10 @@ try {
   // Build with Vite into the target directory
   console.log('Building project into', repoDirName)
   run(`npx vite build --outDir ${repoDirName}`)
+
+  // Write CNAME file to target directory
+  console.log('Writing CNAME:', CNAME)
+  fs.writeFileSync(path.join(targetDir, 'CNAME'), CNAME)
 
   // Commit & push
   console.log('Deploying to remote')
