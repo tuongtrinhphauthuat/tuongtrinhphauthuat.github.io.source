@@ -1,0 +1,20 @@
+--- USER_GUIDE.md
++++ USER_GUIDE.md
+@@ -107,6 +107,17 @@
+     *   Nếu chọn "Gây mê nội khí quản", sẽ hiện thêm lựa chọn con là "2 nòng" hoặc "1 nòng".
+     *   Nếu chọn "Mask thanh quản", lựa chọn con sẽ biến mất.
+
++### 3.5. Điền tay (Input)
++Nếu bạn muốn người dùng tự điền một giá trị nào đó, hãy sử dụng dấu ba chấm `...`. Khi hiển thị, dấu `...` sẽ được thay thế bằng một ô trống để người dùng nhập liệu trực tiếp.
++
++*   **Ví dụ**: `Bệnh nhân có ... ống dẫn lưu.`
++
++### 3.6. Biến nghịch đảo
++Sử dụng cú pháp `$^TenBien$` để lấy giá trị "nghịch đảo" hoặc "kế tiếp" của một biến.
++
++*   **Ví dụ**: Nếu biến `$Ben$` có 2 lựa chọn `Trái/Phải`. Khi chọn "Trái", `$Ben$` sẽ hiển thị "Trái", còn `$^Ben$` sẽ hiển thị "Phải".
++*   **Quy tắc nhiều lựa chọn**: Nếu biến có nhiều hơn 2 giá trị, `$^TenBien$` sẽ hiển thị giá trị nằm ngay sau giá trị được chọn (xoay vòng). Ví dụ: `$Mau$=Đỏ/Xanh/Vàng`. Nếu chọn "Xanh", `$^Mau$` sẽ là "Vàng". Nếu chọn "Vàng", `$^Mau$` sẽ quay lại "Đỏ".
++
+ ---
+
+ ## 4. Quản lý Phiên bản (Versions)

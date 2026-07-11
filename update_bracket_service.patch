@@ -1,0 +1,14 @@
+--- src/services/bracketService.js
++++ src/services/bracketService.js
+@@ -10,6 +10,13 @@
+
+ function formatInlineToHtml(str = '') {
+   // preserve newlines and markdown-style bold (**text**)
+   if (str == null) return ''
++
++  // Handle "..." rule: Replace ... with an input field?
++  // Wait, if it's contenteditable, the user can just type?
++  // The instruction says: "những vị trí có dấu ba chấm ... Thì mặc định sẽ cho người dùng điền tay giá trị tại vị trí đó. Khi người dùng điền thì dấu ... Sẽ bị thay thế luôn."
+   const escaped = escapeHtml(String(str))
+   // convert **bold** -> <strong>escaped</strong>
+   const bolded = escaped.replace(/\*\*(.+?)\*\*/g, (_m, g1) => `<strong>${g1}</strong>`)

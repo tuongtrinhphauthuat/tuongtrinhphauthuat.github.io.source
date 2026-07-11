@@ -150,7 +150,8 @@ export function htmlToSource(input) {
           const textNode = document.createTextNode('[$' + name + '$=' + out + ']')
           span.parentNode.replaceChild(textNode, span)
         } else {
-          const t = document.createTextNode('$' + name + '$')
+          const isInverse = span.getAttribute('data-var-inverse') === 'true'
+          const t = document.createTextNode('$' + (isInverse ? '^' : '') + name + '$')
           span.parentNode.replaceChild(t, span)
         }
       } catch (e) {
@@ -167,8 +168,14 @@ export function htmlToSource(input) {
     node.childNodes.forEach((child) => {
       if (child.nodeType === Node.TEXT_NODE) out += child.nodeValue
       else if (child.nodeType === Node.ELEMENT_NODE) {
-        if (child.tagName && child.tagName.toLowerCase() === 'br') out += '\n'
-        else out += walk(child)
+        if (child.tagName && child.tagName.toLowerCase() === 'br') {
+          out += '\n'
+        } else if (child.classList && child.classList.contains('bracket-input')) {
+          const txt = walk(child)
+          out += (txt === '' ? '...' : txt)
+        } else {
+          out += walk(child)
+        }
       }
     })
     return out
