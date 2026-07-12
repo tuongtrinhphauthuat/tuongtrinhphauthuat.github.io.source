@@ -89,11 +89,11 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: stretch;
   gap: 2px;
-  background: #dbeafe;
-  color: #0f172a;
+  background: var(--panel-bg);
+  color: var(--text-color);
   padding: 0 8px;
   height: 40px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
   z-index: 200;
   width: 100%;
   flex-shrink: 0;
@@ -132,9 +132,9 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 100%;
   left: 0;
-  background: #fff;
+  background: var(--panel-bg);
   color: #0f172a;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   min-width: 240px;
   margin-top: 0;

@@ -27,7 +27,7 @@ function formatInlineToHtml(str = '') {
 
   // Convert '...' into a span. We use zero-width spaces or something?
   // Let's just use `<span class="bracket-input">...</span>`. We will add logic in ProtocolViewer to clear it on focus/input.
-  html = html.replace(/\.\.\./g, '<span class="bracket-input">...</span>')
+  html = html.replace(/\.\.\./g, '<span class="bracket-input" tabindex="0">...</span>')
 
   return html
 }
@@ -295,7 +295,7 @@ export function parseBracketsToHtml(rawText = '', sourceInfo = null) {
           // When we swap options, we might need to re-parse the new option?
           // Yes! `applyChoiceInDom` needs to handle this.
 
-          const spanHtml = `<span class="bracket-opt" contenteditable="false" data-opt-id="${id}" data-opt-type="${type}" data-opt-original="${escapeHtml(inner)}" data-opt-choices="${dataChoices}"${refAttr}>${displayContent}</span>`
+          const spanHtml = `<span class="bracket-opt" tabindex="0" contenteditable="false" data-opt-id="${id}" data-opt-type="${type}" data-opt-original="${escapeHtml(inner)}" data-opt-choices="${dataChoices}"${refAttr}>${displayContent}</span>`
           console.log(`[bracketService ${id}] Final spanHtml for multi:`, { id, type, displayContent: displayContent.substring(0, 100), fullSpan: spanHtml.substring(0, 200) })
           resultHtml += spanHtml
 

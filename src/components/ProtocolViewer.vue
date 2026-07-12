@@ -22,6 +22,11 @@
             <button v-if="selectedVersion && selectedVersion.isEdited" id="viewer-btn-reset" class="viewer-icon-btn reset"
               @click.stop.prevent="onResetClick" :title="t('resetTooltip')">⟲</button>
 
+            <div style="width:12px"></div>
+
+            <button id="viewer-btn-ai-rewrite" class="viewer-icon-btn" @click.stop.prevent="openAiDialog"
+              title="AI Rewriting">✨</button>
+
             <!-- spacer to separate reset from fullscreen to avoid accidental clicks -->
             <div style="width:12px"></div>
 
@@ -75,6 +80,13 @@
       @close="showPushDialog = false"
       @success="onPushSuccess"
     />
+
+    <AiRewriteDialog
+      v-if="showAiDialog"
+      :promptPayload="aiPromptPayload"
+      @close="showAiDialog = false"
+      @success="onAiRewriteSuccess"
+    />
   </div>
 </template>
 
@@ -85,6 +97,8 @@ import ProtocolImages from './ProtocolImages.vue'
 import PushVersionDialog from './PushVersionDialog.vue'
 import { parseBracketsToHtml, applyChoiceInDom, applyVarChoiceInDom, replaceVarTokensInDom, getPlainTextFromContainer } from '../services/bracketService'
 import { htmlToSource } from '../services/bracketReverseService'
+import { generateRewritePrompt } from '../services/promptService'
+import AiRewriteDialog from './AiRewriteDialog.vue'
 import draftService from '../services/draftService'
 import changeDetectionService from '../services/changeDetectionService'
 import languageService from '../services/languageService'
@@ -105,7 +119,7 @@ const props = defineProps({
   // optional draftHtml allows the parent to ask the viewer to render a saved draft/html snapshot
   draftHtml: { type: String, default: null }
 })
-const emit = defineEmits(['copy', 'edited', 'reset', 'toggle-fullscreen'])
+const emit = defineEmits(['copy', 'edited', 'reset', 'toggle-fullscreen', 'progress'])
 
 const editor = ref(null)
 const editorHtml = ref('')
@@ -125,6 +139,11 @@ const showConfirm = ref(false)
 const editedVersionTitle = ref('')
 const initialSuppress = ref(false)
 const showPushDialog = ref(false)
+
+const totalBlanks = ref(0)
+const filledBlanks = ref(0)
+const showAiDialog = ref(false)
+const aiPromptPayload = ref('')
 
 const suggestedNewColumnName = computed(() => {
   if (!props.current || !props.current.versions) return 'Nội dung 1'
@@ -264,6 +283,9 @@ function loadContent(nv, version) {
     const id = getDraftId(nv, version)
     let raw = ''
 
+    const originalRaw = version && version.displayContent ? version.displayContent : (nv ? nv['Nội dung'] || nv['content'] || '' : '')
+    totalBlanks.value = (originalRaw.match(/\.\.\./g) || []).length
+
     if (version && version.displayContent) {
       raw = version.displayContent
     } else {
@@ -291,6 +313,7 @@ function loadContent(nv, version) {
           if (draft.title !== null && draft.title !== undefined) {
             editedVersionTitle.value = draft.title
           }
+          toastStore.addToast('Đã khôi phục bản nháp tự động lưu', 'info')
         }
       }
     }
@@ -327,6 +350,7 @@ function loadContent(nv, version) {
       // ensure editor has the click handler attached so bracket clicks open the popup
       if (editor.value && !editor.value._bracketClickAttached) {
         editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
+        editor.value.addEventListener && editor.value.addEventListener('keydown', onEditorKeydown)
         try { editor.value._bracketClickAttached = true } catch (e) { }
       }
     } catch (e) {
@@ -334,6 +358,18 @@ function loadContent(nv, version) {
     }
     // allow future onInput emits (user edits) to run change detection again
     initialSuppress.value = false
+    updateProgress()
+  })
+}
+
+function updateProgress() {
+  if (!editor.value) return
+  const text = getPlainTextFromContainer(editor.value)
+  const remaining = (text.match(/\.\.\./g) || []).length
+  filledBlanks.value = Math.max(0, totalBlanks.value - remaining)
+  emit('progress', {
+    total: totalBlanks.value,
+    filled: filledBlanks.value
   })
 }
 
@@ -352,8 +388,10 @@ watch(
       // ensure editor has the click handler attached so bracket clicks open the popup
       if (editor.value && !editor.value._bracketClickAttached) {
         editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
+        editor.value.addEventListener && editor.value.addEventListener('keydown', onEditorKeydown)
         try { editor.value._bracketClickAttached = true } catch (e) { }
       }
+      updateProgress()
     })
   },
   { immediate: false }
@@ -452,6 +490,32 @@ function chooseVar(varName, index) {
   replaceVarTokensInDom(editor.value, varDefs.value)
 }
 
+function openAiDialog() {
+  if (!props.current) return
+
+  // Get raw template from store or current props
+  let currentTemplate = (props.selectedVersion && props.selectedVersion.displayContent) || props.current['Nội dung'] || ''
+
+  // Generate payload string, leaving a placeholder for User Info to be replaced in the dialog
+  aiPromptPayload.value = generateRewritePrompt(currentTemplate, '__USER_INFO__', props.current.versions)
+  showAiDialog.value = true
+}
+
+function onAiRewriteSuccess(resultText) {
+  showAiDialog.value = false
+  if (!resultText) return
+
+  // Treat the AI result as a new draft/source
+  const parsed = parseBracketsToHtml(resultText)
+  if (editor.value) {
+    editor.value.innerHTML = parsed.html
+  }
+  editorHtml.value = parsed.html
+
+  toastStore.addToast('Đã áp dụng kết quả AI', 'success')
+  onInput()
+}
+
 function openPopupForOpt(optId, x, y) {
   const opt = options.value.find((o) => o.id === optId)
   if (!opt) return
@@ -526,6 +590,17 @@ function chooseVarFromPopup(index) {
 
 // choose from the topmenu inline list (no dropdown) — apply immediately
 // NOTE: topmenu inline options removed per user request — keep inline popup only
+
+function onEditorKeydown(e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const tgt = e.target
+    if (tgt.classList && (tgt.classList.contains('bracket-opt') || tgt.classList.contains('bracket-var'))) {
+      e.preventDefault()
+      const rect = tgt.getBoundingClientRect()
+      onEditorClick({ target: tgt, clientX: rect.left, clientY: rect.top })
+    }
+  }
+}
 
 function onEditorClick(e) {
   // normalize event target: clicks can land on text nodes, so ensure we have an Element
@@ -670,6 +745,8 @@ function onSourceInput() {
       }
 
       emit('edited', { id, html, text, ts: Date.now(), isChanged })
+
+      updateProgress()
     } catch (err) {
       console.error('emit edited failed', err)
     }
@@ -731,6 +808,23 @@ function onInput() {
 async function onCopy() {
   if (!editor.value) return
   const text = getPlainTextFromContainer(editor.value)
+
+  // Validation for missing info
+  const remaining = (text.match(/\.\.\./g) || []).length
+  if (remaining > 0) {
+    // Highlight empty inputs
+    const inputs = editor.value.querySelectorAll('.bracket-input')
+    inputs.forEach(i => {
+      if (i.textContent.includes('...')) {
+        i.classList.add('missing-info-highlight')
+      }
+    })
+    const confirm = window.confirm(`Bạn còn ${remaining} vị trí chưa điền thông tin (...). Bạn có chắc chắn muốn copy không?`)
+    if (!confirm) {
+      return
+    }
+  }
+
   try {
     await navigator.clipboard.writeText(text)
     emit('copy', text)
@@ -760,6 +854,7 @@ defineExpose({
     setTimeout(() => {
       if (editor.value && !editor.value._bracketClickAttached) {
         editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
+        editor.value.addEventListener && editor.value.addEventListener('keydown', onEditorKeydown)
         try { editor.value._bracketClickAttached = true } catch (e) { }
       }
     }, 40)
@@ -776,6 +871,7 @@ onMounted(() => {
   // attach click listener to editor for bracket clicks if not already attached
   if (editor.value && !editor.value._bracketClickAttached) {
     editor.value.addEventListener && editor.value.addEventListener('click', onEditorClick)
+    editor.value.addEventListener && editor.value.addEventListener('keydown', onEditorKeydown)
     try { editor.value._bracketClickAttached = true } catch (e) { }
   }
   // close popup on outside click; treat bracket-var as inside-target as well
@@ -970,39 +1066,43 @@ onMounted(() => {
 .bracket-popup {
   position: fixed;
   z-index: 9999;
-  background: #fff;
-  border: 1px solid #e6eef8;
-  padding: 6px;
-  border-radius: 6px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  border-radius: 8px;
   box-shadow: 0 6px 18px rgba(2, 6, 23, .08);
-  max-width: 360px
+  max-width: 360px;
+  color: var(--text-color);
 }
 
 .bracket-list {
   list-style: none;
   margin: 0;
-  padding: 6px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   max-height: 320px;
   overflow: auto;
-  min-width: 160px
+  min-width: 160px;
+  scrollbar-width: thin;
 }
 
 .bracket-list li {
-  padding: 8px 10px;
+  padding: 12px 14px;
   border-radius: 6px;
   cursor: pointer;
   border: 1px solid transparent;
   white-space: normal;
   word-break: break-word;
-  word-wrap: break-word
+  word-wrap: break-word;
+  font-size: 1.05em;
+  color: var(--text-color);
 }
 
 .bracket-list li:hover {
-  background: #f8fafc;
-  border-color: #e6eef8
+  background: var(--hover-bg);
+  border-color: var(--border-color);
 }
 </style>
 
@@ -1011,17 +1111,18 @@ onMounted(() => {
 .bracket-opt {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: linear-gradient(90deg, #fff7cc, #fde68a);
   border: 1px solid #f0c57a;
-  padding: 4px 10px;
-  border-radius: 8px;
-  margin: 0 4px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  margin: 2px 4px;
   /* allow text to wrap inside the pill */
   white-space: normal;
   word-break: break-word;
   word-wrap: break-word;
   max-width: 36rem;
+  font-size: 1.05em;
   font-weight: 700 !important;
   color: #091427;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);

@@ -1,18 +1,19 @@
 <template>
-  <div class="app-frame">
-    <MenuBar :items="menuItems" @select="handleMenuAction" />
+  <div class="app-frame" :class="{'zen-mode-active': isZenMode}">
+    <MenuBar v-if="!isZenMode" :items="menuItems" @select="handleMenuAction" />
     <div class="protocols app-frame__body">
-      <Sidebar :protocols="store.protocols" :selectedId="store.selectedId" :selectedVersion="store.selectedVersion"
+      <Sidebar v-if="!isZenMode" :protocols="store.protocols" :selectedId="store.selectedId" :selectedVersion="store.selectedVersion"
         @select="onSelect" />
       <div id="display-main-container" class="protocols__main">
+        <button v-if="isZenMode" class="exit-zen-btn" @click="isZenMode = false" title="Exit Zen Mode">✕ Thoát Tập trung</button>
         <ProtocolViewer id="display-viewer-wrapper" ref="viewerRef" :current="current"
           :selectedVersion="store.selectedVersion" :loading="store.loading" :error="store.error"
           :draftHtml="viewerContentOverride" @copy="onCopy" @edited="onEdited" @reset="onViewerReset"
-          @toggle-fullscreen="toggleFullscreen" />
+          @toggle-fullscreen="toggleFullscreen" @progress="onProgress" />
 
         <LoadingProgress v-if="store.loading" />
 
-        <div id="display-bottom-bar" class="display__bottombar">
+        <div v-if="!isZenMode" id="display-bottom-bar" class="display__bottombar">
           <div class="copy-dropdown">
             <button id="display-btn-copy" class="icon-btn" @click="doCopy" :title="t('copy')">{{ t('copy') }}</button>
             <div class="copy-dropdown-content">
@@ -22,6 +23,9 @@
           <button id="display-btn-upload-image" class="icon-btn" @click="showUploadImageDialog = true" :title="t('menuEditUploadImage')">{{ t('menuEditUploadImage') }}</button>
 
           <div style="margin-left:auto; display:flex; align-items:center; gap:16px">
+            <div id="display-progress-text" style="color:var(--primary-color); font-weight: 500;" v-if="progress.total > 0">
+              Đã điền: {{ progress.filled }}/{{ progress.total }}
+            </div>
             <div id="display-status-text" style="color:#64748b">{{ versionsStatus }}</div>
             <button
               v-if="hasEditedStatus"
@@ -92,6 +96,29 @@ const showFontSizeDialog = ref(false)
 const showAuthorDialog = ref(false)
 const showShortcutsDialog = ref(false)
 const showUploadImageDialog = ref(false)
+
+const isZenMode = ref(false)
+const progress = ref({ total: 0, filled: 0 })
+
+function onProgress(p) {
+  progress.value = p
+}
+
+// Theme management
+const currentTheme = ref(localStorage.getItem('protocol_theme') || 'light')
+function toggleTheme() {
+  currentTheme.value = currentTheme.value === 'light' ? 'dark' : 'light'
+  localStorage.setItem('protocol_theme', currentTheme.value)
+  applyTheme()
+}
+function applyTheme() {
+  if (currentTheme.value === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark')
+  } else {
+    document.documentElement.removeAttribute('data-theme')
+  }
+}
+
 const languageDialogPosition = ref({ x: 140, y: 64 })
 const fontDialogPosition = ref({ x: 220, y: 80 })
 const confirmState = ref({ visible: false, type: null })
@@ -103,6 +130,7 @@ const hasEditedStatus = computed(() => {
 
 onMounted(() => {
   store.fetchProtocols()
+  applyTheme()
 })
 
 onBeforeUnmount(() => {
@@ -316,6 +344,12 @@ function handleMenuAction(payload) {
     case 'reset-app':
       openConfirm('reset-app')
       break
+    case 'toggle-theme':
+      toggleTheme()
+      break
+    case 'toggle-zen-mode':
+      isZenMode.value = !isZenMode.value
+      break
     case 'open-language-dialog':
       hideFloatingDialogs()
       languageDialogPosition.value = computeFloatingPosition(coords)
@@ -458,8 +492,8 @@ function onFontDialogClose() {
 .protocols__sidebar {
   width: 320px;
   padding: 16px;
-  border-right: 1px solid rgba(16, 24, 40, .06);
-  background: linear-gradient(180deg, #f8fafc, #fff);
+  border-right: 1px solid var(--border-color);
+  background: var(--panel-bg);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -476,7 +510,7 @@ function onFontDialogClose() {
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background: #f1f5f9;
+  background: var(--bg-color);
 }
 
 .protocols__input {
@@ -484,7 +518,7 @@ function onFontDialogClose() {
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #e6eef8;
-  background: #fff
+  background: var(--panel-bg)
 }
 
 .protocols__list {
@@ -514,7 +548,7 @@ function onFontDialogClose() {
   display: flex;
   flex-direction: column;
   padding: 18px;
-  background: #fff;
+  background: var(--panel-bg);
   text-align: left;
   overflow: hidden;
   min-height: 0
@@ -586,7 +620,7 @@ function onFontDialogClose() {
   inset: 0;
   z-index: 99999;
   padding: 18px;
-  background: #fff;
+  background: var(--panel-bg);
   display: flex;
   flex-direction: column
 }
@@ -602,7 +636,7 @@ function onFontDialogClose() {
   padding: 12px 16px 16px 16px;
   border-top: 1px solid rgba(16, 24, 40, .04);
   align-items: center;
-  background: #fff;
+  background: var(--panel-bg);
   z-index: 20;
   min-height: var(--bottombar-height);
   box-shadow: 0 -2px 8px rgba(2, 6, 23, 0.04);
@@ -610,7 +644,7 @@ function onFontDialogClose() {
 }
 
 .icon-btn {
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid #e3e8ef;
   padding: 8px;
   border-radius: 8px;
@@ -681,7 +715,7 @@ function onFontDialogClose() {
 }
 
 .modal {
-  background: #fff;
+  background: var(--panel-bg);
   padding: 18px;
   border-radius: 8px;
   min-width: 360px;
@@ -691,7 +725,7 @@ function onFontDialogClose() {
 .versions-popover {
   position: fixed;
   z-index: 100003;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid #e6eef8;
   padding: 6px;
   border-radius: 6px;
