@@ -94,6 +94,22 @@ const schema = [
     className: 'app-menu__root app-menu__root--tools',
     children: [
       {
+        id: 'menu-tools-theme',
+        domId: 'menu-tools-theme',
+        labelKey: 'menuToolsTheme',
+        action: 'toggle-theme',
+        icon: '🌓',
+        className: 'app-menu__item app-menu__item--theme'
+      },
+      {
+        id: 'menu-tools-zen-mode',
+        domId: 'menu-tools-zen-mode',
+        labelKey: 'menuToolsZenMode',
+        action: 'toggle-zen-mode',
+        icon: '🧘',
+        className: 'app-menu__item app-menu__item--zen'
+      },
+      {
         id: 'menu-tools-language',
         domId: 'menu-tools-language',
         labelKey: 'menuToolsLanguage',

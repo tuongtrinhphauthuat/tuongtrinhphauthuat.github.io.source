@@ -203,8 +203,8 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: 10px;
   border-radius: 8px;
-  border: 1px solid #e6eef8;
-  background: #fff
+  border: 1px solid var(--border-color);
+  background: var(--panel-bg)
 }
 
 .protocols__list {
@@ -251,14 +251,14 @@ onBeforeUnmount(() => {
   padding: 6px 10px 6px 24px;
   /* Indented */
   font-size: 0.9em;
-  color: #475467;
+  color: var(--text-color);
   cursor: pointer;
   border-radius: 4px;
   margin-top: 2px;
 }
 
 .protocols__submenu-item:hover {
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--hover-bg);
 }
 
 .protocols__submenu-item.is-active {
@@ -268,7 +268,7 @@ onBeforeUnmount(() => {
 }
 
 .protocols__submenu-item.is-edited {
-  background: #fff0f6; /* light pink */
+  background: rgba(255, 0, 0, 0.05); /* light pink */
   color: #9f1239;
   font-weight: 600;
 }
