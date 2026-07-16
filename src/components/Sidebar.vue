@@ -231,7 +231,7 @@ onBeforeUnmount(() => {
 
 .protocols__item-header.is-selected {
   background: linear-gradient(90deg, #06b6d4 0%, #7c3aed 100%);
-  color: #fff
+  color: var(--panel-bg)
 }
 
 .protocols__line {

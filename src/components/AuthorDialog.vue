@@ -72,7 +72,7 @@ function openProfile() {
 }
 
 .author-card {
-  background: #fff;
+  background: var(--panel-bg);
   border-radius: 12px;
   width: 400px;
   max-width: 100%;
@@ -90,7 +90,7 @@ function openProfile() {
 .author-card__header h3 {
   margin: 0;
   font-size: 1.2rem;
-  color: #0f172a;
+  color: var(--text-color);
 }
 
 .author-card__close {
@@ -99,12 +99,12 @@ function openProfile() {
   font-size: 26px;
   line-height: 1;
   cursor: pointer;
-  color: #64748b;
+  color: var(--text-color);
 }
 
 .author-card__body {
   margin: 0 0 16px 0;
-  color: #334155;
+  color: var(--text-color);
   line-height: 1.6;
 }
 
@@ -115,13 +115,13 @@ function openProfile() {
 .author-card__section h4 {
   margin: 0 0 6px 0;
   font-size: 0.95rem;
-  color: #0f172a;
+  color: var(--text-color);
 }
 
 .author-card__section ul {
   margin: 0;
   padding-left: 18px;
-  color: #475569;
+  color: var(--text-color);
 }
 
 .author-card__contact a {
@@ -150,12 +150,12 @@ function openProfile() {
 }
 
 .author-card__action--primary {
-  background: linear-gradient(120deg, #0ea5e9, #6366f1);
-  color: #fff;
+  background: linear-gradient(120deg, var(--primary-color), #6366f1);
+  color: var(--panel-bg);
 }
 
 .author-card__action--ghost {
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--hover-bg);
+  color: var(--text-color);
 }
 </style>

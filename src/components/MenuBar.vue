@@ -125,7 +125,7 @@ onBeforeUnmount(() => {
 
 .app-menu__group.is-open .app-menu__trigger,
 .app-menu__trigger:hover {
-  background: #f1f5f9;
+  background: var(--bg-color);
 }
 
 .app-menu__dropdown {
@@ -133,7 +133,7 @@ onBeforeUnmount(() => {
   top: 100%;
   left: 0;
   background: var(--panel-bg);
-  color: #0f172a;
+  color: var(--text-color);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   min-width: 240px;
@@ -166,12 +166,12 @@ onBeforeUnmount(() => {
 }
 
 .app-menu__entry:hover {
-  background: #f1f5f9;
+  background: var(--bg-color);
 }
 
 .app-menu__entry-label {
   font-weight: 500;
-  color: #0f172a;
+  color: var(--text-color);
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -181,12 +181,12 @@ onBeforeUnmount(() => {
 .app-menu__entry-shortcut {
   font-weight: 500;
   font-size: 0.78rem;
-  color: #475569;
+  color: var(--text-color);
   white-space: nowrap;
 }
 
 .app-menu__entry-desc {
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-color);
 }
 </style>

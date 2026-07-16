@@ -1,4 +1,7 @@
-// Basic encryption/obfuscation for local storage
+const fs = require('fs');
+let code = fs.readFileSync('src/services/aiService.js', 'utf8');
+
+const newCode = `// Basic encryption/obfuscation for local storage
 const encrypt = (text) => {
   return btoa(text.split('').map(c => String.fromCharCode(c.charCodeAt(0) ^ 42)).join(''));
 }
@@ -29,7 +32,7 @@ export const fetchModels = async (provider, apiKey) => {
   if (!apiKey) throw new Error('API Key is missing');
 
   if (provider === 'google') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+    const url = \`https://generativelanguage.googleapis.com/v1beta/models?key=\${apiKey}\`;
     const response = await fetch(url);
     if (!response.ok) {
       const err = await response.json();
@@ -41,7 +44,7 @@ export const fetchModels = async (provider, apiKey) => {
     const url = 'https://openrouter.ai/api/v1/models';
     const response = await fetch(url, {
       headers: {
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': \`Bearer \${apiKey}\`
       }
     });
     if (!response.ok) {
@@ -59,7 +62,7 @@ export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
   if (!modelId) throw new Error('Model ID is missing');
 
   if (provider === 'google') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+    const url = \`https://generativelanguage.googleapis.com/v1beta/models/\${modelId}:generateContent?key=\${apiKey}\`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -78,7 +81,7 @@ export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': \`Bearer \${apiKey}\`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -96,3 +99,6 @@ export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
     throw new Error('Unsupported AI Provider');
   }
 }
+`;
+
+fs.writeFileSync('src/services/aiService.js', newCode, 'utf8');

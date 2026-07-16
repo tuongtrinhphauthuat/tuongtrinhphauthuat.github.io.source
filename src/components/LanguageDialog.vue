@@ -67,8 +67,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .floating-dialog {
   position: fixed;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: 0 20px 35px rgba(15, 23, 42, 0.2);
   padding: 16px;
@@ -78,13 +78,13 @@ onBeforeUnmount(() => {
 .floating-dialog__header {
   margin: 0 0 4px 0;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-color);
 }
 
 .floating-dialog__hint {
   margin: 0 0 12px 0;
   font-size: 13px;
-  color: #475569;
+  color: var(--text-color);
 }
 
 .floating-dialog__list {
@@ -99,8 +99,8 @@ onBeforeUnmount(() => {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  background: var(--hover-bg);
   cursor: pointer;
   font-weight: 600;
 }
@@ -116,11 +116,11 @@ onBeforeUnmount(() => {
 
 .floating-dialog__label {
   flex: 1;
-  color: #0f172a;
+  color: var(--text-color);
 }
 
 .floating-dialog__check {
-  color: #0f172a;
+  color: var(--text-color);
   font-size: 16px;
 }
 </style>

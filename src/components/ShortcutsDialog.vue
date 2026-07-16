@@ -44,7 +44,7 @@ function close() {
 }
 
 .shortcuts-box {
-  background: #fff;
+  background: var(--panel-bg);
   padding: 16px;
   border-radius: 8px;
   min-width: 320px;
@@ -83,7 +83,7 @@ function close() {
 }
 
 .note {
-  color: #64748b;
+  color: var(--text-color);
   font-size: 13px
 }
 
@@ -96,7 +96,7 @@ function close() {
   padding: 8px 12px;
   border-radius: 6px;
   border: 1px solid #e6eef8;
-  background: #fff;
+  background: var(--panel-bg);
   cursor: pointer
 }
 </style>

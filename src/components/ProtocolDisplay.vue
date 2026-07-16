@@ -26,7 +26,7 @@
             <div id="display-progress-text" style="color:var(--primary-color); font-weight: 500;" v-if="progress.total > 0">
               Đã điền: {{ progress.filled }}/{{ progress.total }}
             </div>
-            <div id="display-status-text" style="color:#64748b">{{ versionsStatus }}</div>
+            <div id="display-status-text" style="color:var(--text-color)">{{ versionsStatus }}</div>
             <button
               v-if="hasEditedStatus"
               class="icon-btn btn-push"
@@ -540,7 +540,7 @@ function onFontDialogClose() {
 
 .protocols__list-item.is-selected {
   background: linear-gradient(90deg, #06b6d4 0%, #7c3aed 100%);
-  color: #fff
+  color: var(--panel-bg)
 }
 
 .protocols__content {
@@ -556,7 +556,7 @@ function onFontDialogClose() {
 
 .protocols__status {
   margin-left: auto;
-  color: #64748b
+  color: var(--text-color)
 }
 
 .protocols__editor {
@@ -593,13 +593,13 @@ function onFontDialogClose() {
 }
 
 .protocols__empty {
-  color: #475569;
+  color: var(--text-color);
   padding: 30px;
   text-align: left
 }
 
 .protocols__error {
-  color: #b91c1c
+  color: var(--missing-info-border)
 }
 
 /* main container for right side to allow bottom bar placement */
@@ -690,8 +690,8 @@ function onFontDialogClose() {
 }
 
 .btn-push {
-  background: linear-gradient(90deg, #0284c7 0%, #eab308 100%);
-  color: #fff;
+  background: linear-gradient(90deg, var(--primary-color) 0%, #eab308 100%);
+  color: var(--panel-bg);
   border: none;
   font-weight: 600;
   padding: 8px 16px;
@@ -754,7 +754,7 @@ function onFontDialogClose() {
 
 .modal-hint {
   font-size: 12px;
-  color: #475569;
+  color: var(--text-color);
   margin-top: 8px
 }
 

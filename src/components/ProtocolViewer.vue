@@ -45,8 +45,8 @@
         <div class="protocols__editor-body">
           <div class="protocols__editor-area">
             <div class="protocols__tabs">
-              <button class="protocols__tab" :class="{'is-active': activeTab === 'interactive'}" @click="switchTab('interactive')">Interactive</button>
-              <button class="protocols__tab" :class="{'is-active': activeTab === 'source'}" @click="switchTab('source')">Source Code</button>
+              <div class="protocols__tab" :class="{'is-active': activeTab === 'interactive'}" @click="switchTab('interactive')">Interactive</div>
+              <div class="protocols__tab" :class="{'is-active': activeTab === 'source'}" @click="switchTab('source')">Source Code</div>
             </div>
 
             <div v-show="activeTab === 'interactive'" id="viewer-content-editable" ref="editor" class="protocols__editor-content" contenteditable="true"
@@ -891,7 +891,7 @@ onMounted(() => {
 /* minimal local styles: main visual rules are in ProtocolDisplay */
 .opt-label {
   font-size: 13px;
-  color: #334155
+  color: var(--text-color)
 }
 
 /* protocols__vardefs removed — variable selection is inline via clickable pills */
@@ -933,11 +933,11 @@ onMounted(() => {
 
 .title-text-main {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-color);
 }
 
 .title-separator {
-  color: #64748b;
+  color: var(--text-color);
   font-weight: 600;
 }
 
@@ -949,7 +949,7 @@ onMounted(() => {
   padding: 4px 8px;
   font-size: 1.3rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-color);
   min-width: 150px;
   outline: none;
   flex: 1;
@@ -963,7 +963,7 @@ onMounted(() => {
 .inherit-badge {
   background: #e0f2fe;
   border: 1px solid #7dd3fc;
-  color: #0369a1;
+  color: var(--primary-color);
   font-size: .95rem;
   padding: 2px 10px;
   border-radius: 999px;
@@ -979,7 +979,7 @@ onMounted(() => {
 }
 
 .viewer-icon-btn {
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid #e3e8ef;
   padding: 6px 8px;
   border-radius: 6px;
@@ -989,8 +989,8 @@ onMounted(() => {
 
 .viewer-icon-btn.reset {
   background: #fff7f7;
-  border-color: #fecaca;
-  color: #b91c1c;
+  border-color: var(--missing-info-border);
+  color: var(--missing-info-border);
 }
 
 .protocols__editor-area {
@@ -1003,8 +1003,8 @@ onMounted(() => {
 
 .protocols__editor-content {
   width: 100%;
-  border-radius: 8px;
-  border: 1px solid #e6eef8;
+  border-radius: 0 8px 8px 8px; /* Make it look connected to the tabs */
+  border: 1px solid var(--border-color);
   padding: 12px;
   font-family: inherit;
   outline: none;
@@ -1012,7 +1012,10 @@ onMounted(() => {
   flex: 1;
   min-height: 0;
   text-align: left;
-  padding-bottom: 80px
+  padding-bottom: 80px;
+  background: var(--panel-bg);
+  position: relative;
+  z-index: 5;
 }
 
 .bracket-opt {
@@ -1043,8 +1046,8 @@ onMounted(() => {
   opacity: 0.95;
   padding: 6px 12px;
   border-radius: 999px;
-  background: #f1f5f9;
-  border: 1px dashed #cbd5e1;
+  background: var(--bg-color);
+  border: 1px dashed var(--border-color);
   cursor: pointer;
   font-weight: 700;
   color: #1f2937;
@@ -1052,13 +1055,13 @@ onMounted(() => {
 }
 
 .protocols__empty {
-  color: #475569;
+  color: var(--text-color);
   padding: 30px;
   text-align: center
 }
 
 .protocols__error {
-  color: #b91c1c
+  color: var(--missing-info-border)
 }
 </style>
 
@@ -1154,7 +1157,7 @@ onMounted(() => {
 <style>
 .bracket-empty .bracket-empty-preview {
   opacity: 0.8;
-  color: #334155;
+  color: var(--text-color);
   font-style: italic;
   pointer-events: none;
   user-select: none
@@ -1168,7 +1171,7 @@ onMounted(() => {
 
 .bracket-input {
   color: #94a3b8;
-  background: #f1f5f9;
+  background: var(--bg-color);
   border-radius: 4px;
   padding: 0 4px;
   font-family: monospace;
@@ -1178,33 +1181,49 @@ onMounted(() => {
 }
 .bracket-input:empty::before {
   content: '...';
-  color: #cbd5e1;
+  color: var(--border-color);
 }
 
 </style>
 
 .protocols__tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 4px;
+  margin-bottom: -1px; /* Overlap the editor border to hide the bottom border */
+  padding-left: 8px;
+  z-index: 10;
+  position: relative;
 }
 .protocols__tab {
-  padding: 6px 12px;
-  border-radius: 6px 6px 0 0;
-  border: 1px solid #e6eef8;
-  border-bottom: none;
-  background: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
   cursor: pointer;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-color);
+  opacity: 0.7;
+  transition: all 0.2s;
+  user-select: none;
+}
+.protocols__tab:hover {
+  opacity: 1;
 }
 .protocols__tab.is-active {
-  background: #fff;
-  color: #0f172a;
-  border-bottom: 2px solid #3b82f6;
+  background: var(--panel-bg);
+  color: var(--primary-color);
+  border-bottom: 1px solid var(--panel-bg); /* Match background to hide bottom border line */
+  opacity: 1;
+  box-shadow: 0 -2px 0 0 var(--primary-color) inset;
 }
 .protocols__source-textarea {
   resize: none;
-  font-family: monospace;
-  white-space: pre-wrap;
+  font-family: 'Consolas', 'Courier New', monospace;
+  white-space: pre;
+  overflow: auto;
+  line-height: 1.5;
+  padding: 16px;
+  background: var(--input-bg);
+  color: var(--text-color);
+  font-size: 14px;
 }

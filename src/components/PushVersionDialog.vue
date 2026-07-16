@@ -146,7 +146,7 @@ async function doPush() {
 }
 
 .push-box {
-  background: #fff;
+  background: var(--panel-bg);
   border-radius: 12px;
   width: 480px;
   max-width: 90%;
@@ -158,26 +158,26 @@ async function doPush() {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .push-title {
   margin: 0;
   font-size: 1.1rem;
-  color: #0f172a;
+  color: var(--text-color);
 }
 
 .close-btn {
   background: none;
   border: none;
   font-size: 24px;
-  color: #64748b;
+  color: var(--text-color);
   cursor: pointer;
   line-height: 1;
 }
 
 .close-btn:hover {
-  color: #0f172a;
+  color: var(--text-color);
 }
 
 .push-content {
@@ -185,13 +185,13 @@ async function doPush() {
 }
 
 .push-info {
-  background: #f8fafc;
+  background: var(--hover-bg);
   padding: 12px;
   border-radius: 6px;
   margin-bottom: 20px;
   font-size: 0.95rem;
-  color: #334155;
-  border: 1px solid #e2e8f0;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
 }
 
 .push-info div {
@@ -220,14 +220,14 @@ async function doPush() {
   align-items: center;
   gap: 8px;
   margin-top: 16px;
-  color: #0ea5e9;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid #0ea5e9;
+  border: 2px solid var(--primary-color);
   border-bottom-color: transparent;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -250,11 +250,11 @@ async function doPush() {
   gap: 8px;
   cursor: pointer;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--text-color);
 }
 
 .push-option small {
-  color: #64748b;
+  color: var(--text-color);
   font-weight: normal;
 }
 
@@ -267,29 +267,29 @@ async function doPush() {
 
 .push-new-col label {
   font-size: 0.9rem;
-  color: #475569;
+  color: var(--text-color);
 }
 
 .push-input {
   padding: 8px 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 0.95rem;
   outline: none;
 }
 
 .push-input:focus {
-  border-color: #0ea5e9;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
 }
 
 .push-footer {
   padding: 16px 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  background: #f8fafc;
+  background: var(--hover-bg);
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
 }
@@ -308,19 +308,19 @@ async function doPush() {
 }
 
 .btn-cancel {
-  background: #fff;
-  border: 1px solid #cbd5e1;
-  color: #475569;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
 }
 
 .btn-cancel:hover:not(:disabled) {
-  background: #f1f5f9;
+  background: var(--bg-color);
 }
 
 .btn-push {
   background: #10b981;
   border: 1px solid #059669;
-  color: #fff;
+  color: var(--panel-bg);
 }
 
 .btn-push:hover:not(:disabled) {
