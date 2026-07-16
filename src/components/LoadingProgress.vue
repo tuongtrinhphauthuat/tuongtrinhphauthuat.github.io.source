@@ -31,7 +31,7 @@ const props = defineProps({
   display: flex;
   gap: 14px;
   align-items: center;
-  background: #fff;
+  background: var(--panel-bg);
   padding: 14px 18px;
   border-radius: 10px;
   box-shadow: 0 8px 30px rgba(2, 6, 23, 0.08);
@@ -39,7 +39,7 @@ const props = defineProps({
 
 .loading-text {
   font-size: 16px;
-  color: #0f172a;
+  color: var(--text-color);
   font-weight: 600;
 }
 

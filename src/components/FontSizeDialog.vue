@@ -97,8 +97,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .floating-size {
   position: fixed;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: 0 20px 35px rgba(15, 23, 42, 0.2);
   padding: 16px;
@@ -108,13 +108,13 @@ onBeforeUnmount(() => {
 .floating-size__header {
   margin: 0 0 4px 0;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-color);
 }
 
 .floating-size__hint {
   margin: 0 0 16px 0;
   font-size: 13px;
-  color: #475569;
+  color: var(--text-color);
 }
 
 .floating-size__sample {
@@ -122,7 +122,7 @@ onBeforeUnmount(() => {
   align-items: baseline;
   gap: 12px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-color);
   font-size: 1.1rem;
 }
 
@@ -141,8 +141,8 @@ onBeforeUnmount(() => {
   width: 40px;
   height: 36px;
   border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  background: var(--hover-bg);
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
@@ -160,8 +160,8 @@ onBeforeUnmount(() => {
 .floating-size__preset {
   flex: 1;
   border-radius: 20px;
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  background: var(--hover-bg);
   padding: 8px 12px;
   cursor: pointer;
   font-weight: 600;

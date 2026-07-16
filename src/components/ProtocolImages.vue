@@ -616,7 +616,7 @@ onBeforeUnmount(() => {
 }
 
 .protocol-images__item {
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid #e6eef8;
   border-radius: 10px;
   padding: 8px;
@@ -637,7 +637,7 @@ onBeforeUnmount(() => {
   width: 100%;
   overflow: hidden;
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--hover-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -681,7 +681,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #fff;
+  color: var(--panel-bg);
   text-align: center;
   position: relative;
 }
@@ -752,7 +752,7 @@ onBeforeUnmount(() => {
   top: 18px;
   right: 22px;
   background: rgba(15, 23, 42, 0.75);
-  color: #fff;
+  color: var(--panel-bg);
   border: none;
   border-radius: 999px;
   width: 40px;
@@ -766,7 +766,7 @@ onBeforeUnmount(() => {
   top: 50%;
   transform: translateY(-50%);
   background: rgba(15, 23, 42, 0.6);
-  color: #fff;
+  color: var(--panel-bg);
   border: none;
   border-radius: 999px;
   width: 46px;
@@ -795,7 +795,7 @@ onBeforeUnmount(() => {
 
 .protocol-images__stamp-btn {
   background: rgba(15, 23, 42, 0.85); /* Dark background so text stands out */
-  color: #fff;
+  color: var(--panel-bg);
   border: 1px solid rgba(15, 23, 42, 0.95);
   border-radius: 8px;
   padding: 8px 16px;
@@ -838,7 +838,7 @@ onBeforeUnmount(() => {
   border: 2px solid transparent;
   transition: all 0.2s;
   flex-shrink: 0;
-  background: #fff;
+  background: var(--panel-bg);
 }
 
 .protocol-images__thumbnail:hover {
@@ -847,7 +847,7 @@ onBeforeUnmount(() => {
 
 .protocol-images__thumbnail.is-active {
   opacity: 1;
-  border-color: #0ea5e9;
+  border-color: var(--primary-color);
 }
 
 .protocol-images__thumbnail img {

@@ -43,7 +43,7 @@ function cancel() {
   z-index: 100005;
 }
 .confirm-box {
-  background: #fff;
+  background: var(--panel-bg);
   padding: 16px;
   border-radius: 8px;
   min-width: 320px;
@@ -51,9 +51,9 @@ function cancel() {
   box-shadow: 0 8px 24px rgba(2,6,23,0.15);
 }
 .confirm-title { margin: 0 0 8px 0 }
-.confirm-message { margin: 0 0 12px 0; color: #334155 }
+.confirm-message { margin: 0 0 12px 0; color: var(--text-color) }
 .confirm-actions { display:flex; gap:10px; justify-content:flex-end }
-.btn { padding:8px 12px; border-radius:6px; border:1px solid #e6eef8; background:#fff; cursor:pointer }
-.btn-confirm { background:#ef4444; color:#fff; border-color: #fca5a5 }
-.btn-cancel { background:#fff }
+.btn { padding:8px 12px; border-radius:6px; border:1px solid #e6eef8; background:var(--panel-bg); cursor:pointer }
+.btn-confirm { background:var(--missing-info-border); color:var(--panel-bg); border-color: #fca5a5 }
+.btn-cancel { background:var(--panel-bg) }
 </style>

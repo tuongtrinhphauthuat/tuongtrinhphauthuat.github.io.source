@@ -135,7 +135,7 @@ function doClearDrafts() {
 }
 
 .settings-box {
-  background: #fff;
+  background: var(--panel-bg);
   border-radius: 12px;
   width: 700px;
   max-width: 95%;
@@ -151,14 +151,14 @@ function doClearDrafts() {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #fff;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--panel-bg);
 }
 
 .settings-title-text {
   font-weight: 700;
   font-size: 1.1rem;
-  color: #0f172a;
+  color: var(--text-color);
 }
 
 .close-btn {
@@ -166,7 +166,7 @@ function doClearDrafts() {
   border: none;
   font-size: 24px;
   line-height: 1;
-  color: #64748b;
+  color: var(--text-color);
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -178,8 +178,8 @@ function doClearDrafts() {
 }
 
 .close-btn:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--bg-color);
+  color: var(--text-color);
 }
 
 .settings-layout {
@@ -192,8 +192,8 @@ function doClearDrafts() {
 
 .settings-sidebar {
   width: 200px;
-  background: #f8fafc;
-  border-right: 1px solid #e2e8f0;
+  background: var(--hover-bg);
+  border-right: 1px solid var(--border-color);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -205,19 +205,19 @@ function doClearDrafts() {
   padding: 10px 12px;
   border-radius: 6px;
   cursor: pointer;
-  color: #475569;
+  color: var(--text-color);
   font-weight: 500;
   transition: all 0.2s;
 }
 
 .settings-menu-item:hover {
-  background: #e2e8f0;
-  color: #1e293b;
+  background: var(--border-color);
+  color: var(--text-color);
 }
 
 .settings-menu-item.active {
-  background: #fff;
-  color: #0284c7;
+  background: var(--panel-bg);
+  color: var(--primary-color);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   font-weight: 600;
 }
@@ -231,9 +231,9 @@ function doClearDrafts() {
 .settings-section-title {
   margin: 0 0 20px 0;
   font-size: 1.25rem;
-  color: #0f172a;
+  color: var(--text-color);
   padding-bottom: 10px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .settings-label {
@@ -241,20 +241,20 @@ function doClearDrafts() {
   text-align: left;
   margin-top: 16px;
   margin-bottom: 8px;
-  color: #334155;
+  color: var(--text-color);
   font-weight: 500;
 }
 
 .settings-input {
   width: 100%;
   padding: 10px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 0.95rem;
 }
 
 .settings-input:focus {
-  border-color: #0ea5e9;
+  border-color: var(--primary-color);
   outline: none;
   box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
 }
@@ -267,21 +267,21 @@ function doClearDrafts() {
 
 .settings-link {
   padding: 10px 16px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  background: #f1f5f9;
-  color: #0369a1;
+  background: var(--bg-color);
+  color: var(--primary-color);
   text-decoration: none;
   font-weight: 500;
 }
 
 .settings-link:hover {
-  background: #e2e8f0;
+  background: var(--border-color);
 }
 
 .settings-hint {
   margin-top: 12px;
-  color: #64748b;
+  color: var(--text-color);
   font-size: 13px;
   font-style: italic;
 }
@@ -289,23 +289,23 @@ function doClearDrafts() {
 .btn {
   padding: 10px 20px;
   border-radius: 6px;
-  border: 1px solid #cbd5e1;
-  background: #fff;
+  border: 1px solid var(--border-color);
+  background: var(--panel-bg);
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s;
 }
 
 .danger-zone {
-  border: 1px solid #fecaca;
-  background: #fef2f2;
+  border: 1px solid var(--missing-info-border);
+  background: var(--missing-info-bg);
   border-radius: 8px;
   padding: 16px;
   margin-top: 20px;
 }
 
 .danger-title {
-  color: #b91c1c;
+  color: var(--missing-info-border);
   margin: 0 0 8px 0;
   font-size: 1rem;
 }
@@ -317,12 +317,12 @@ function doClearDrafts() {
 }
 
 .btn-danger {
-  background: #ef4444;
-  border-color: #dc2626;
-  color: #fff;
+  background: var(--missing-info-border);
+  border-color: var(--missing-info-border);
+  color: var(--panel-bg);
 }
 
 .btn-danger:hover {
-  background: #dc2626;
+  background: var(--missing-info-border);
 }
 </style>

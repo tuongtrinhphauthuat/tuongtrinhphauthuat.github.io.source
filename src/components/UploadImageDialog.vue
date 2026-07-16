@@ -41,9 +41,9 @@
               </template>
               <input v-else type="text" v-model="cond.value" :placeholder="t('uploadImageValuePlaceholder')" class="form-control value-input" disabled />
 
-              <button class="btn btn-icon" @click="removeCondition(index)" v-if="conditions.length > 1" title="Xoá điều kiện" style="color: #ef4444; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
+              <button class="btn btn-icon" @click="removeCondition(index)" v-if="conditions.length > 1" title="Xoá điều kiện" style="color: var(--missing-info-border); background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
             </div>
-            <button class="btn btn-add-cond" @click="addCondition" style="margin-top: 5px; font-size: 0.85rem; padding: 4px 8px; background: #e2e8f0; color: #475569; border: none; border-radius: 4px; cursor: pointer;">+ {{ t('uploadImageAddVar') }}</button>
+            <button class="btn btn-add-cond" @click="addCondition" style="margin-top: 5px; font-size: 0.85rem; padding: 4px 8px; background: var(--border-color); color: var(--text-color); border: none; border-radius: 4px; cursor: pointer;">+ {{ t('uploadImageAddVar') }}</button>
           </div>
 
           <div class="form-group">
@@ -251,7 +251,7 @@ async function doUpload() {
 }
 
 .upload-box {
-  background: #fff;
+  background: var(--panel-bg);
   border-radius: 12px;
   width: 80vw;
   max-width: 95vw;
@@ -266,20 +266,20 @@ async function doUpload() {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .upload-title {
   margin: 0;
   font-size: 1.25rem;
-  color: #0f172a;
+  color: var(--text-color);
 }
 
 .close-btn {
   background: none;
   border: none;
   font-size: 24px;
-  color: #64748b;
+  color: var(--text-color);
   cursor: pointer;
 }
 
@@ -292,7 +292,7 @@ async function doUpload() {
 .upload-left {
   flex: 3;
   padding: 20px;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--border-color);
   overflow-y: auto;
 }
 
@@ -302,7 +302,7 @@ async function doUpload() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8fafc;
+  background: var(--hover-bg);
   overflow: hidden;
 }
 
@@ -314,13 +314,13 @@ async function doUpload() {
   display: block;
   font-weight: 500;
   margin-bottom: 8px;
-  color: #334155;
+  color: var(--text-color);
 }
 
 .form-control {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 0.95rem;
   outline: none;
@@ -328,7 +328,7 @@ async function doUpload() {
 }
 
 .form-control:focus {
-  border-color: #0ea5e9;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
 }
 
@@ -341,8 +341,8 @@ async function doUpload() {
   top: 100%;
   left: 0;
   right: 0;
-  background: #fff;
-  border: 1px solid #cbd5e1;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   margin-top: 4px;
   max-height: 200px;
@@ -356,11 +356,11 @@ async function doUpload() {
 .protocol-dropdown li {
   padding: 8px 12px;
   cursor: pointer;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--bg-color);
 }
 
 .protocol-dropdown li:hover {
-  background: #f8fafc;
+  background: var(--hover-bg);
 }
 
 .protocol-dropdown li.no-results {
@@ -371,7 +371,7 @@ async function doUpload() {
 .selected-protocol-info {
   margin-top: 8px;
   font-size: 0.9rem;
-  color: #0ea5e9;
+  color: var(--primary-color);
 }
 
 .condition-row {
@@ -409,7 +409,7 @@ async function doUpload() {
 }
 
 .error-msg {
-  color: #ef4444;
+  color: var(--missing-info-border);
   margin-top: 10px;
 }
 
@@ -420,7 +420,7 @@ async function doUpload() {
 
 .upload-footer {
   padding: 16px 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -440,20 +440,20 @@ async function doUpload() {
 }
 
 .btn-cancel {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--bg-color);
+  color: var(--text-color);
 }
 
 .btn-cancel:hover:not(:disabled) {
-  background: #e2e8f0;
+  background: var(--border-color);
 }
 
 .btn-upload {
-  background: #0ea5e9;
+  background: var(--primary-color);
   color: white;
 }
 
 .btn-upload:hover:not(:disabled) {
-  background: #0284c7;
+  background: var(--primary-color);
 }
 </style>
