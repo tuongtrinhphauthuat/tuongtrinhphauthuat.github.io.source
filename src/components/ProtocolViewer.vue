@@ -1186,6 +1186,7 @@ onMounted(() => {
 
 </style>
 
+<style scoped>
 .protocols__tabs {
   display: flex;
   gap: 4px;
@@ -1227,3 +1228,4 @@ onMounted(() => {
   color: var(--text-color);
   font-size: 14px;
 }
+</style>
