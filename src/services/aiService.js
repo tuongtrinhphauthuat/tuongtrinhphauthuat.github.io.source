@@ -29,8 +29,13 @@ export const fetchModels = async (provider, apiKey) => {
   if (!apiKey) throw new Error('API Key is missing');
 
   if (provider === 'google') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-    const response = await fetch(url);
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models';
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'x-goog-api-key': apiKey
+      }
+    });
     if (!response.ok) {
       let err;
       try {
@@ -73,7 +78,7 @@ export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
   if (!modelId) throw new Error('Model ID is missing');
 
   if (provider === 'google') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent`;
 
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
@@ -87,9 +92,13 @@ export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
       body: JSON.stringify(requestBody)
     });
+
     if (!response.ok) {
       let err;
       try {
@@ -108,7 +117,7 @@ export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
       return text;
     } else {
       console.error('[AI Workflow] Google API unexpected data structure:', data);
-      throw new Error('Unexpected data structure from Google API');
+      throw new Error('Unexpected data structure from Google API (có thể do lỗi cấu trúc hoặc bị filter bởi safety).');
     }
   } else if (provider === 'openrouter') {
     const url = 'https://openrouter.ai/api/v1/chat/completions';
