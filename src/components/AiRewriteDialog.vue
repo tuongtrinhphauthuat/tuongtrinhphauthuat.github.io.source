@@ -183,10 +183,14 @@ async function doRewrite() {
 
   try {
     const finalPrompt = props.promptPayload.replace('__USER_INFO__', userInfo.value)
-    console.log("Sending prompt to AI:", finalPrompt)
+    console.log("Preparing to send prompt to AI:", finalPrompt)
 
-    const result = await rewriteWithAI(provider.value, apiKey.value, selectedModel.value, finalPrompt)
-    emit('success', result)
+    emit('success', {
+      provider: provider.value,
+      apiKey: apiKey.value,
+      modelId: selectedModel.value,
+      prompt: finalPrompt
+    })
   } catch (err) {
     error.value = err.message || 'Có lỗi xảy ra khi gọi AI API.'
   } finally {

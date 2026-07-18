@@ -71,7 +71,7 @@ export const fetchModels = async (provider, apiKey) => {
   return [];
 }
 
-export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
+export const rewriteWithAI = async (provider, apiKey, modelId, prompt, onChunk) => {
   console.log(`[AI Workflow] Starting rewriteWithAI. Provider: ${provider}, Model: ${modelId}`);
   console.log(`[AI Workflow] Prompt:\n${prompt}`);
   if (!apiKey) throw new Error('API Key is missing');
@@ -80,12 +80,13 @@ export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
   if (provider === 'google') {
     // The user requested using the Interactions API, replacing generateContent.
     // The Interactions API doesn't use the modelId in the URL path, it passes it in the body.
-    const url = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+    const url = 'https://generativelanguage.googleapis.com/v1beta/interactions?alt=sse';
 
     // According to docs, the payload for the interactions API text generation:
     const requestBody = {
       model: modelId,
-      input: prompt
+      input: prompt,
+      stream: true
     };
 
     console.log(`[AI Workflow] Google API Request URL: ${url}`);
@@ -110,36 +111,49 @@ export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
       }
       throw new Error(err?.error?.message || 'Google API Error');
     }
-    const data = await response.json();
-    console.log('[AI Workflow] Google AI Success Data:', JSON.stringify(data, null, 2));
 
-    // Interactions API response structure:
-    // data.output_text is not a direct property in the REST response, it usually returns an object with steps.
-    // However, looking at the REST example:
-    // data.steps[...].content[...].text where type="model_output" and content type="text"
-
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
     let finalOutput = '';
+    let buffer = '';
 
-    if (data.steps && data.steps.length > 0) {
-      for (const step of data.steps) {
-        if (step.type === 'model_output' && step.content) {
-           for (const content of step.content) {
-             if (content.type === 'text') {
-               finalOutput += content.text;
-             }
-           }
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+
+      // Keep the last partial line in the buffer
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+          const dataStr = line.slice(6);
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (parsed.event_type === 'step.delta' && parsed.delta?.type === 'text') {
+              const chunk = parsed.delta.text;
+              finalOutput += chunk;
+              if (onChunk) {
+                onChunk(chunk);
+              }
+            } else if (parsed.event_type === 'error') {
+               console.error('[AI Workflow] Google API Streaming Error:', parsed.error);
+               throw new Error(parsed.error?.message || 'Google API Streaming Error');
+            }
+          } catch (e) {
+            console.warn('[AI Workflow] Failed to parse SSE line:', line, e);
+          }
         }
       }
-    } else if (data.output_text) {
-      // Just in case the REST response includes it as a convenience wrapper
-      finalOutput = data.output_text;
     }
 
     if (finalOutput) {
       console.log('[AI Workflow] Google AI Final Text Output:\n' + finalOutput);
       return finalOutput;
     } else {
-      console.error('[AI Workflow] Google API unexpected data structure:', data);
+      console.error('[AI Workflow] Google API unexpected data structure or empty stream');
       throw new Error('Unexpected data structure from Google API (có thể do lỗi cấu trúc hoặc bị filter bởi safety).');
     }
   } else if (provider === 'openrouter') {
