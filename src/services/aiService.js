@@ -78,15 +78,16 @@ export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
   if (!modelId) throw new Error('Model ID is missing');
 
   if (provider === 'google') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent`;
+    // The user requested using the Interactions API, replacing generateContent.
+    // The Interactions API doesn't use the modelId in the URL path, it passes it in the body.
+    const url = 'https://generativelanguage.googleapis.com/v1beta/interactions';
 
+    // According to docs, the payload for the interactions API text generation:
     const requestBody = {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.2,
-        candidateCount: 1
-      }
+      model: modelId,
+      input: prompt
     };
+
     console.log(`[AI Workflow] Google API Request URL: ${url}`);
     console.log(`[AI Workflow] Google API Request Body:`, JSON.stringify(requestBody, null, 2));
 
@@ -111,10 +112,32 @@ export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
     }
     const data = await response.json();
     console.log('[AI Workflow] Google AI Success Data:', JSON.stringify(data, null, 2));
-    if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
-      const text = data.candidates[0].content.parts[0].text;
-      console.log('[AI Workflow] Google AI Final Text Output:\n' + text);
-      return text;
+
+    // Interactions API response structure:
+    // data.output_text is not a direct property in the REST response, it usually returns an object with steps.
+    // However, looking at the REST example:
+    // data.steps[...].content[...].text where type="model_output" and content type="text"
+
+    let finalOutput = '';
+
+    if (data.steps && data.steps.length > 0) {
+      for (const step of data.steps) {
+        if (step.type === 'model_output' && step.content) {
+           for (const content of step.content) {
+             if (content.type === 'text') {
+               finalOutput += content.text;
+             }
+           }
+        }
+      }
+    } else if (data.output_text) {
+      // Just in case the REST response includes it as a convenience wrapper
+      finalOutput = data.output_text;
+    }
+
+    if (finalOutput) {
+      console.log('[AI Workflow] Google AI Final Text Output:\n' + finalOutput);
+      return finalOutput;
     } else {
       console.error('[AI Workflow] Google API unexpected data structure:', data);
       throw new Error('Unexpected data structure from Google API (có thể do lỗi cấu trúc hoặc bị filter bởi safety).');
