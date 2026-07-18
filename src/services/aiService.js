@@ -32,8 +32,14 @@ export const fetchModels = async (provider, apiKey) => {
     const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
     const response = await fetch(url);
     if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error?.message || 'Google API Error');
+      let err;
+      try {
+        err = await response.json();
+        console.error('[AI Workflow] Google API Fetch Models Error Response:', err);
+      } catch (parseError) {
+        console.error('[AI Workflow] Google API Fetch Models Error Response could not be parsed as JSON. Status:', response.status);
+      }
+      throw new Error(err?.error?.message || 'Google API Error');
     }
     const data = await response.json();
     return data.models.filter(m => m.supportedGenerationMethods.includes('generateContent')).map(m => m.name.replace('models/', ''));
@@ -45,8 +51,14 @@ export const fetchModels = async (provider, apiKey) => {
       }
     });
     if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error?.message || 'OpenRouter API Error');
+      let err;
+      try {
+        err = await response.json();
+        console.error('[AI Workflow] OpenRouter API Fetch Models Error Response:', err);
+      } catch (parseError) {
+        console.error('[AI Workflow] OpenRouter API Fetch Models Error Response could not be parsed as JSON. Status:', response.status);
+      }
+      throw new Error(err?.error?.message || 'OpenRouter API Error');
     }
     const data = await response.json();
     return data.data.map(m => m.id);
@@ -55,43 +67,88 @@ export const fetchModels = async (provider, apiKey) => {
 }
 
 export const rewriteWithAI = async (provider, apiKey, modelId, prompt) => {
+  console.log(`[AI Workflow] Starting rewriteWithAI. Provider: ${provider}, Model: ${modelId}`);
+  console.log(`[AI Workflow] Prompt:\n${prompt}`);
   if (!apiKey) throw new Error('API Key is missing');
   if (!modelId) throw new Error('Model ID is missing');
 
   if (provider === 'google') {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+
+    const requestBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.2,
+        candidateCount: 1
+      }
+    };
+    console.log(`[AI Workflow] Google API Request URL: ${url}`);
+    console.log(`[AI Workflow] Google API Request Body:`, JSON.stringify(requestBody, null, 2));
+
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
+      body: JSON.stringify(requestBody)
     });
     if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error?.message || 'Google API Error');
+      let err;
+      try {
+        err = await response.json();
+        console.error('[AI Workflow] Google API Error Response:', err);
+      } catch (parseError) {
+        console.error('[AI Workflow] Google API Error Response could not be parsed as JSON. Status:', response.status);
+      }
+      throw new Error(err?.error?.message || 'Google API Error');
     }
     const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
+    console.log('[AI Workflow] Google AI Success Data:', JSON.stringify(data, null, 2));
+    if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
+      const text = data.candidates[0].content.parts[0].text;
+      console.log('[AI Workflow] Google AI Final Text Output:\n' + text);
+      return text;
+    } else {
+      console.error('[AI Workflow] Google API unexpected data structure:', data);
+      throw new Error('Unexpected data structure from Google API');
+    }
   } else if (provider === 'openrouter') {
     const url = 'https://openrouter.ai/api/v1/chat/completions';
+
+    const requestBody = {
+      model: modelId,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.2
+    };
+    console.log(`[AI Workflow] OpenRouter API Request URL: ${url}`);
+    console.log(`[AI Workflow] OpenRouter API Request Body:`, JSON.stringify(requestBody, null, 2));
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model: modelId,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify(requestBody)
     });
     if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error?.message || 'OpenRouter API Error');
+      let err;
+      try {
+        err = await response.json();
+        console.error('[AI Workflow] OpenRouter API Error Response:', err);
+      } catch (parseError) {
+        console.error('[AI Workflow] OpenRouter API Error Response could not be parsed as JSON. Status:', response.status);
+      }
+      throw new Error(err?.error?.message || 'OpenRouter API Error');
     }
     const data = await response.json();
-    return data.choices[0].message.content;
+    console.log('[AI Workflow] OpenRouter AI Success Data:', JSON.stringify(data, null, 2));
+    if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+      const text = data.choices[0].message.content;
+      console.log('[AI Workflow] OpenRouter AI Final Text Output:\n' + text);
+      return text;
+    } else {
+      console.error('[AI Workflow] OpenRouter API unexpected data structure:', data);
+      throw new Error('Unexpected data structure from OpenRouter API');
+    }
   } else {
     throw new Error('Unsupported AI Provider');
   }
