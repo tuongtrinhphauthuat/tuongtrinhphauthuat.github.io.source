@@ -52,7 +52,7 @@
             <div v-show="activeTab === 'interactive'" id="viewer-content-editable" ref="editor" class="protocols__editor-content" contenteditable="true"
               v-html="editorHtml" @input="onInput" @click="onEditorClick"></div>
 
-            <textarea v-if="activeTab === 'source'" class="protocols__editor-content protocols__source-textarea"
+            <textarea v-if="activeTab === 'source'" ref="sourceTextarea" class="protocols__editor-content protocols__source-textarea"
               v-model="sourceCodeContent" @input="onSourceInput"></textarea>
 
             <!-- inline popup for bracket options -->
@@ -98,6 +98,7 @@ import PushVersionDialog from './PushVersionDialog.vue'
 import { parseBracketsToHtml, applyChoiceInDom, applyVarChoiceInDom, replaceVarTokensInDom, getPlainTextFromContainer } from '../services/bracketService'
 import { htmlToSource } from '../services/bracketReverseService'
 import { generateRewritePrompt } from '../services/promptService'
+import { rewriteWithAI } from '../services/aiService'
 import AiRewriteDialog from './AiRewriteDialog.vue'
 import draftService from '../services/draftService'
 import changeDetectionService from '../services/changeDetectionService'
@@ -122,6 +123,7 @@ const props = defineProps({
 const emit = defineEmits(['copy', 'edited', 'reset', 'toggle-fullscreen', 'progress'])
 
 const editor = ref(null)
+const sourceTextarea = ref(null)
 const editorHtml = ref('')
 const options = ref([])
 const varDefs = ref([])
@@ -501,19 +503,40 @@ function openAiDialog() {
   showAiDialog.value = true
 }
 
-function onAiRewriteSuccess(resultText) {
+async function onAiRewriteSuccess(payload) {
   showAiDialog.value = false
-  if (!resultText) return
+  if (!payload || !payload.prompt) return
 
-  // Treat the AI result as a new draft/source
-  const parsed = parseBracketsToHtml(resultText)
-  if (editor.value) {
-    editor.value.innerHTML = parsed.html
+  switchTab('source')
+  sourceCodeContent.value = ''
+
+  try {
+    const resultText = await rewriteWithAI(
+      payload.provider,
+      payload.apiKey,
+      payload.modelId,
+      payload.prompt,
+      (chunk) => {
+        sourceCodeContent.value += chunk
+        if (sourceTextarea.value) {
+          sourceTextarea.value.scrollTop = sourceTextarea.value.scrollHeight
+        }
+      }
+    )
+
+    if (resultText) {
+      // Handle providers that don't support streaming yet (e.g. OpenRouter)
+      if (!sourceCodeContent.value) {
+        sourceCodeContent.value = resultText
+      }
+      toastStore.addToast('Đã áp dụng kết quả AI', 'success')
+      // Switch back to interactive to parse and show the result
+      switchTab('interactive')
+    }
+  } catch (err) {
+    console.error('[AI Workflow] Error during streaming:', err)
+    toastStore.addToast(err.message || 'Lỗi khi gọi AI API', 'error')
   }
-  editorHtml.value = parsed.html
-
-  toastStore.addToast('Đã áp dụng kết quả AI', 'success')
-  onInput()
 }
 
 function openPopupForOpt(optId, x, y) {
